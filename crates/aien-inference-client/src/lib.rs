@@ -3,6 +3,64 @@ use aien_protocol_types::ProtocolVersion;
 use async_trait::async_trait;
 use std::sync::Arc;
 
+pub struct LocalInferenceClient {
+    service: Arc<dyn InferenceService>,
+}
+
+impl LocalInferenceClient {
+    pub fn new(service: Arc<dyn InferenceService>) -> Self {
+        Self { service }
+    }
+}
+
+#[async_trait]
+impl InferenceService for LocalInferenceClient {
+    async fn infer(&self, req: InferenceRequest) -> Result<InferenceResponse, InferenceError> {
+        self.service.infer(req).await
+    }
+
+    async fn branch_context(&self, req: BranchContextRequest) -> Result<BranchContextReceipt, InferenceError> {
+        self.service.branch_context(req).await
+    }
+
+    async fn get_capabilities(&self) -> Result<InferenceCapabilities, InferenceError> {
+        self.service.get_capabilities().await
+    }
+}
+
+pub struct HttpInferenceClient {
+    pub endpoint: String,
+    pub auth_token: Option<String>,
+}
+
+impl HttpInferenceClient {
+    pub fn new(endpoint: String, auth_token: Option<String>) -> Self {
+        Self { endpoint, auth_token }
+    }
+}
+
+#[async_trait]
+impl InferenceService for HttpInferenceClient {
+    async fn infer(&self, _req: InferenceRequest) -> Result<InferenceResponse, InferenceError> {
+        Err(InferenceError::Internal(format!("HTTP transport connecting to {} not configured", self.endpoint)))
+    }
+
+    async fn branch_context(&self, _req: BranchContextRequest) -> Result<BranchContextReceipt, InferenceError> {
+        Err(InferenceError::Internal(format!("HTTP transport connecting to {} not configured", self.endpoint)))
+    }
+
+    async fn get_capabilities(&self) -> Result<InferenceCapabilities, InferenceError> {
+        Ok(InferenceCapabilities {
+            protocol: ProtocolVersion::new(1, 0),
+            context_branching: true,
+            physical_cow: true,
+            streaming: true,
+            cancellation: true,
+            max_context_tokens: Some(32768),
+        })
+    }
+}
+
 pub struct MockInferenceClient {
     capabilities: InferenceCapabilities,
 }
