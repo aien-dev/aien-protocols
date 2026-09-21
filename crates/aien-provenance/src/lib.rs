@@ -1,5 +1,7 @@
 use aien_protocol_types::Digest32;
 use bitflags::bitflags;
+use p256::ecdsa::signature::{Signer, Verifier};
+use p256::ecdsa::{Signature, SigningKey, VerifyingKey};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
@@ -65,6 +67,10 @@ pub enum ProvenanceError {
     GrantExpired(u64),
     #[error("Missing signature from authority")]
     MissingSignature,
+    #[error("Invalid signature format: {0}")]
+    InvalidSignatureFormat(String),
+    #[error("Signature verification failed: {0}")]
+    SignatureVerificationFailed(String),
 }
 
 impl SourceGrant {
@@ -78,6 +84,58 @@ impl SourceGrant {
             issuer_signature: None,
             expires_at_epoch_sec: None,
         }
+    }
+
+    pub fn with_expiration(mut self, expires_at_epoch_sec: u64) -> Self {
+        self.expires_at_epoch_sec = Some(expires_at_epoch_sec);
+        self
+    }
+
+    /// Computes the deterministic SHA-256 digest of the unsigned grant fields.
+    pub fn compute_unsigned_digest(&self) -> Digest32 {
+        let mut hasher = Sha256::new();
+        hasher.update(self.grant_id.as_bytes());
+        hasher.update(self.source_uri.as_bytes());
+        hasher.update(self.license_spdx.as_bytes());
+        hasher.update(&self.permissions.bits().to_le_bytes());
+        hasher.update(self.issuer.as_bytes());
+        if let Some(exp) = self.expires_at_epoch_sec {
+            hasher.update(b"exp:present");
+            hasher.update(&exp.to_le_bytes());
+        } else {
+            hasher.update(b"exp:none");
+        }
+        Digest32(hasher.finalize().into())
+    }
+
+    /// Signs the grant using the authority signing key.
+    pub fn sign(&mut self, authority_signing_key: &SigningKey) {
+        let digest = self.compute_unsigned_digest();
+        let sig: Signature = authority_signing_key.sign(&digest.0);
+        self.issuer_signature = Some(sig.to_bytes().to_vec());
+    }
+
+    /// Verifies the cryptographic signature of the grant against the authority verifying key.
+    pub fn verify_signature(&self, authority_verifying_key: &VerifyingKey) -> Result<(), ProvenanceError> {
+        let Some(ref sig_bytes) = self.issuer_signature else {
+            return Err(ProvenanceError::MissingSignature);
+        };
+        let sig = Signature::from_slice(sig_bytes)
+            .map_err(|e| ProvenanceError::InvalidSignatureFormat(e.to_string()))?;
+        let digest = self.compute_unsigned_digest();
+        authority_verifying_key
+            .verify(&digest.0, &sig)
+            .map_err(|e| ProvenanceError::SignatureVerificationFailed(e.to_string()))
+    }
+
+    /// Verifies that the grant has not expired given current epoch timestamp in seconds.
+    pub fn verify_validity(&self, current_epoch_sec: u64) -> Result<(), ProvenanceError> {
+        if let Some(exp) = self.expires_at_epoch_sec {
+            if current_epoch_sec > exp {
+                return Err(ProvenanceError::GrantExpired(exp));
+            }
+        }
+        Ok(())
     }
 
     pub fn verify_permission(&self, required: GrantPermissions) -> Result<(), ProvenanceError> {
@@ -99,6 +157,23 @@ impl SourceGrant {
                 license: self.license_spdx.clone(),
             })
         }
+    }
+
+    /// Performs complete authorization verification: license, permissions, expiration, and authority signature.
+    pub fn verify_all(
+        &self,
+        required_permissions: GrantPermissions,
+        allowed_licenses: &[&str],
+        current_epoch_sec: u64,
+        authority_verifying_key: Option<&VerifyingKey>,
+    ) -> Result<(), ProvenanceError> {
+        self.verify_license(allowed_licenses)?;
+        self.verify_permission(required_permissions)?;
+        self.verify_validity(current_epoch_sec)?;
+        if let Some(vk) = authority_verifying_key {
+            self.verify_signature(vk)?;
+        }
+        Ok(())
     }
 
     pub fn compute_digest(&self) -> Digest32 {
@@ -131,5 +206,37 @@ mod tests {
         assert!(grant.verify_permission(GrantPermissions::DISTILL).is_err());
         assert!(grant.verify_license(&["Apache-2.0", "MIT"]).is_ok());
         assert!(grant.verify_license(&["GPL-3.0"]).is_err());
+    }
+
+    #[test]
+    fn test_source_grant_signature_and_expiration() {
+        let signing_key = SigningKey::from_slice(&[33u8; 32]).unwrap();
+        let verifying_key = VerifyingKey::from(&signing_key);
+
+        let mut grant = SourceGrant::new(
+            "https://hf.co/datasets/aien/verified".to_string(),
+            "Apache-2.0".to_string(),
+            GrantPermissions::TRAIN | GrantPermissions::DISTILL,
+            "Atlas Provenance Authority".to_string(),
+        )
+        .with_expiration(1000);
+
+        // Missing signature rejected
+        assert_eq!(grant.verify_signature(&verifying_key), Err(ProvenanceError::MissingSignature));
+
+        // Sign grant
+        grant.sign(&signing_key);
+        assert!(grant.verify_signature(&verifying_key).is_ok());
+
+        // Wrong verifying key rejected
+        let other_key = VerifyingKey::from(&SigningKey::from_slice(&[44u8; 32]).unwrap());
+        assert!(grant.verify_signature(&other_key).is_err());
+
+        // Validity checks
+        assert!(grant.verify_validity(999).is_ok());
+        assert_eq!(grant.verify_validity(1001), Err(ProvenanceError::GrantExpired(1000)));
+
+        // verify_all succeeds within window with valid key
+        assert!(grant.verify_all(GrantPermissions::TRAIN, &["Apache-2.0"], 950, Some(&verifying_key)).is_ok());
     }
 }

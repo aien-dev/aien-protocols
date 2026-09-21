@@ -50,14 +50,11 @@ impl InferenceService for HttpInferenceClient {
     }
 
     async fn get_capabilities(&self) -> Result<InferenceCapabilities, InferenceError> {
-        Ok(InferenceCapabilities {
-            protocol: ProtocolVersion::new(1, 0),
-            context_branching: true,
-            physical_cow: true,
-            streaming: true,
-            cancellation: true,
-            max_context_tokens: Some(32768),
-        })
+        // Unconfigured transport must not advertise unsupported capabilities
+        if self.endpoint.is_empty() {
+            return Err(InferenceError::Internal("HTTP transport endpoint is empty".to_string()));
+        }
+        Err(InferenceError::Internal(format!("HTTP transport connecting to {} not configured", self.endpoint)))
     }
 }
 

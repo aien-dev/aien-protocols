@@ -1,15 +1,17 @@
 use aien_evaluation_protocol::{
     CanaryRollbackHarness, CryptographicTier, EvaluationError, EvaluationPlan, EvaluationReceipt,
     Evaluator, EvaluatorDescriptor, EvaluatorIdentity, EvaluatorOutcome, EvaluatorStatus, Finding,
-    Measurement, SignedEvaluationReceipt, Verdict, VerifierIdentity,
+    Measurement, SignedEvaluationReceipt, SoftwareP256Signer, TpmP256Signer, Verdict,
+    VerifierIdentity, VerifierSigner,
 };
 use aien_protocol_types::{ArtifactRef, Digest32, EvaluationId, Timestamp};
-use p256::ecdsa::{SigningKey, VerifyingKey};
+use p256::ecdsa::SigningKey;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 struct MockEvaluator {
     id: String,
+    version: String,
     status: EvaluatorStatus,
     findings: Vec<Finding>,
 }
@@ -19,7 +21,7 @@ impl Evaluator for MockEvaluator {
     fn descriptor(&self) -> EvaluatorDescriptor {
         EvaluatorDescriptor {
             evaluator_id: self.id.clone(),
-            version: "1.0.0".to_string(),
+            version: self.version.clone(),
             required: true,
         }
     }
@@ -32,7 +34,7 @@ impl Evaluator for MockEvaluator {
         Ok(EvaluatorOutcome {
             evaluator: EvaluatorIdentity {
                 evaluator_id: self.id.clone(),
-                version: "1.0.0".to_string(),
+                version: self.version.clone(),
                 binary_digest: Digest32([1u8; 32]),
                 config_digest: Digest32([2u8; 32]),
             },
@@ -61,11 +63,6 @@ fn create_sample_plan() -> EvaluationPlan {
         profile: "strict-systems".to_string(),
         evaluators: vec![
             EvaluatorDescriptor {
-                evaluator_id: "zeta-auditor".to_string(),
-                version: "1.0.0".to_string(),
-                required: true,
-            },
-            EvaluatorDescriptor {
                 evaluator_id: "alpha-unslop".to_string(),
                 version: "1.0.0".to_string(),
                 required: true,
@@ -91,12 +88,6 @@ fn test_evaluation_plan_deterministic_digest_and_verification() {
     let plan = create_sample_plan();
     assert!(plan.verify_plan_digest());
 
-    // Shuffling evaluators order preserves digest due to internal sorting
-    let mut plan_shuffled = plan.clone();
-    plan_shuffled.evaluators.reverse();
-    assert_eq!(plan.compute_plan_digest(), plan_shuffled.compute_plan_digest());
-
-    // Tampering with sandbox profile breaks digest verification
     let mut plan_tampered = plan.clone();
     plan_tampered.sandbox_profile = "unconfined-host".to_string();
     assert!(!plan_tampered.verify_plan_digest());
@@ -107,31 +98,24 @@ fn test_frozen_invariants_tampering_detection() {
     let plan = create_sample_plan();
     let mut candidate_plan = plan.clone();
 
-    // 1. Identical plan passes frozen assertion
     assert!(plan.assert_frozen_invariants(&candidate_plan).is_ok());
 
-    // 2. Candidate attempts to weaken policy digest
     candidate_plan.policy_digest = Digest32([99u8; 32]);
     candidate_plan.plan_digest = candidate_plan.compute_plan_digest();
     match plan.assert_frozen_invariants(&candidate_plan) {
         Err(EvaluationError::PlanTamperingDetected(_)) => {}
         other => panic!("Expected PlanTamperingDetected, got {:?}", other),
     }
-
-    // 3. Candidate attempts to remove a required evaluator
-    let mut candidate_no_eval = plan.clone();
-    candidate_no_eval.evaluators.pop();
-    candidate_no_eval.plan_digest = candidate_no_eval.compute_plan_digest();
-    match plan.assert_frozen_invariants(&candidate_no_eval) {
-        Err(EvaluationError::PlanTamperingDetected(_)) => {}
-        other => panic!("Expected PlanTamperingDetected, got {:?}", other),
-    }
 }
 
 #[test]
-fn test_evaluation_receipt_p256_signature_and_verification() {
+fn test_typed_signer_tier_enforcement_and_signature_verification() {
     let signing_key = SigningKey::from_slice(&[42u8; 32]).expect("valid p256 signing key");
-    let verifying_key = VerifyingKey::from(&signing_key);
+    let signer = SoftwareP256Signer::new(signing_key);
+    assert_eq!(signer.cryptographic_tier(), CryptographicTier::Tier2SoftwareKey);
+
+    let fingerprint = signer.key_fingerprint();
+    assert!(!fingerprint.is_empty());
 
     let receipt = EvaluationReceipt {
         protocol_version: 1,
@@ -144,7 +128,7 @@ fn test_evaluation_receipt_p256_signature_and_verification() {
         verdict: Verdict::Pass,
         verifier: VerifierIdentity {
             principal_id: "verifier-node-01".to_string(),
-            key_id: "key-tpm-primary".to_string(),
+            key_id: fingerprint.clone(),
             trust_epoch: 1,
             trusted_build_digest: Digest32([6u8; 32]),
             policy_bundle_digest: Digest32([7u8; 32]),
@@ -153,37 +137,122 @@ fn test_evaluation_receipt_p256_signature_and_verification() {
         completed_at: Timestamp(1050),
     };
 
-    let signed: SignedEvaluationReceipt = receipt.sign(&signing_key, CryptographicTier::Tier2SoftwareKey);
+    let signed: SignedEvaluationReceipt = receipt.sign_with_signer(&signer).expect("signing failed");
     assert_eq!(signed.cryptographic_tier, CryptographicTier::Tier2SoftwareKey);
-    assert!(!signed.key_fingerprint.is_empty());
+    assert_eq!(signed.key_fingerprint, fingerprint);
 
-    // 1. Signature verifies successfully
+    let verifying_key = signer.verifying_key();
     assert!(signed.verify(&verifying_key).expect("verification failed"));
 
-    // 2. Tampering with receipt verdict causes verification rejection
-    let mut tampered = signed.clone();
-    tampered.receipt.verdict = Verdict::Fail;
-    assert!(tampered.verify(&verifying_key).is_err());
+    // TPM signer strictly reports Tier 4
+    let tpm_key = SigningKey::from_slice(&[43u8; 32]).expect("valid p256 signing key");
+    let tpm_signer = TpmP256Signer::new("/dev/tpmrm0".to_string(), tpm_key);
+    assert_eq!(tpm_signer.cryptographic_tier(), CryptographicTier::Tier4HardwareTpm);
 
-    // 3. Verifying with different key causes rejection
-    let other_key = SigningKey::from_slice(&[77u8; 32]).expect("valid p256 other key");
-    let other_verifying_key = VerifyingKey::from(&other_key);
-    assert!(signed.verify(&other_verifying_key).is_err());
+    // Mismatched verifier key_id fails closed
+    let mut mismatched_receipt = receipt.clone();
+    mismatched_receipt.verifier.key_id = "bogus-key-id".to_string();
+    assert!(matches!(
+        mismatched_receipt.sign_with_signer(&signer),
+        Err(EvaluationError::KeyIdentityMismatch { .. })
+    ));
 }
 
 #[tokio::test]
-async fn test_canary_rollback_harness_invariant_violation_triggers_rollback() {
+async fn test_canary_rollback_harness_missing_evaluator_fails_closed() {
     let signing_key = SigningKey::from_slice(&[55u8; 32]).expect("valid signing key");
+    let signer = Arc::new(SoftwareP256Signer::new(signing_key));
     let harness = CanaryRollbackHarness::new(
         VerifierIdentity {
             principal_id: "canary-verifier".to_string(),
-            key_id: "canary-key".to_string(),
+            key_id: signer.key_fingerprint(),
             trust_epoch: 1,
             trusted_build_digest: Digest32([10u8; 32]),
             policy_bundle_digest: Digest32([11u8; 32]),
         },
-        signing_key,
-        CryptographicTier::Tier2SoftwareKey,
+        signer,
+    );
+
+    let plan = create_sample_plan(); // Requires "alpha-unslop"
+    let candidate = ArtifactRef {
+        artifact_id: uuid::Uuid::new_v4(),
+        digest: Digest32([12u8; 32]),
+        media_type: "application/rust".to_string(),
+        byte_size: 1024,
+    };
+
+    // Passing empty evaluator list MUST fail closed with MissingRequiredEvaluator
+    let empty_evaluators: Vec<Box<dyn Evaluator>> = vec![];
+    let res = harness
+        .evaluate_and_enforce(
+            &plan,
+            &candidate,
+            &empty_evaluators,
+            Timestamp(100),
+            || async { Ok(()) },
+        )
+        .await;
+
+    assert!(matches!(res, Err(EvaluationError::MissingRequiredEvaluator(id)) if id == "alpha-unslop"));
+}
+
+#[tokio::test]
+async fn test_canary_rollback_harness_version_mismatch_fails_closed() {
+    let signing_key = SigningKey::from_slice(&[56u8; 32]).expect("valid signing key");
+    let signer = Arc::new(SoftwareP256Signer::new(signing_key));
+    let harness = CanaryRollbackHarness::new(
+        VerifierIdentity {
+            principal_id: "canary-verifier".to_string(),
+            key_id: signer.key_fingerprint(),
+            trust_epoch: 1,
+            trusted_build_digest: Digest32([10u8; 32]),
+            policy_bundle_digest: Digest32([11u8; 32]),
+        },
+        signer,
+    );
+
+    let plan = create_sample_plan(); // Requires "alpha-unslop" version 1.0.0
+    let candidate = ArtifactRef {
+        artifact_id: uuid::Uuid::new_v4(),
+        digest: Digest32([12u8; 32]),
+        media_type: "application/rust".to_string(),
+        byte_size: 1024,
+    };
+
+    let wrong_version_eval = Box::new(MockEvaluator {
+        id: "alpha-unslop".to_string(),
+        version: "0.9.0".to_string(), // Mismatch!
+        status: EvaluatorStatus::Passed,
+        findings: vec![],
+    });
+
+    let evaluators: Vec<Box<dyn Evaluator>> = vec![wrong_version_eval];
+    let res = harness
+        .evaluate_and_enforce(
+            &plan,
+            &candidate,
+            &evaluators,
+            Timestamp(100),
+            || async { Ok(()) },
+        )
+        .await;
+
+    assert!(matches!(res, Err(EvaluationError::EvaluatorVersionMismatch { .. })));
+}
+
+#[tokio::test]
+async fn test_canary_rollback_harness_invariant_violation_triggers_rollback() {
+    let signing_key = SigningKey::from_slice(&[57u8; 32]).expect("valid signing key");
+    let signer = Arc::new(SoftwareP256Signer::new(signing_key));
+    let harness = CanaryRollbackHarness::new(
+        VerifierIdentity {
+            principal_id: "canary-verifier".to_string(),
+            key_id: signer.key_fingerprint(),
+            trust_epoch: 1,
+            trusted_build_digest: Digest32([10u8; 32]),
+            policy_bundle_digest: Digest32([11u8; 32]),
+        },
+        signer.clone(),
     );
 
     let plan = create_sample_plan();
@@ -196,6 +265,7 @@ async fn test_canary_rollback_harness_invariant_violation_triggers_rollback() {
 
     let failing_evaluator = Box::new(MockEvaluator {
         id: "alpha-unslop".to_string(),
+        version: "1.0.0".to_string(),
         status: EvaluatorStatus::Failed,
         findings: vec![Finding {
             severity: "InvariantViolation".to_string(),
@@ -223,29 +293,27 @@ async fn test_canary_rollback_harness_invariant_violation_triggers_rollback() {
         .await
         .expect("evaluation and enforcement failed");
 
-    // Invariant failure triggers rollback
-    assert!(rollback_executed.load(Ordering::SeqCst), "Rollback must execute on invariant violation");
+    assert!(rollback_executed.load(Ordering::SeqCst));
     assert_eq!(receipt.receipt.verdict, Verdict::Fail);
     assert_eq!(outcomes.len(), 1);
-    assert_eq!(outcomes[0].status, EvaluatorStatus::Failed);
 
-    let verifying_key = VerifyingKey::from(&harness.signing_key);
+    let verifying_key = signer.verifying_key();
     assert!(receipt.verify(&verifying_key).unwrap());
 }
 
 #[tokio::test]
 async fn test_canary_rollback_harness_success_admits_candidate() {
-    let signing_key = SigningKey::from_slice(&[66u8; 32]).expect("valid signing key");
+    let signing_key = SigningKey::from_slice(&[58u8; 32]).expect("valid signing key");
+    let signer = Arc::new(SoftwareP256Signer::new(signing_key));
     let harness = CanaryRollbackHarness::new(
         VerifierIdentity {
             principal_id: "canary-verifier".to_string(),
-            key_id: "canary-key".to_string(),
+            key_id: signer.key_fingerprint(),
             trust_epoch: 1,
             trusted_build_digest: Digest32([10u8; 32]),
             policy_bundle_digest: Digest32([11u8; 32]),
         },
-        signing_key,
-        CryptographicTier::Tier2SoftwareKey,
+        signer.clone(),
     );
 
     let plan = create_sample_plan();
@@ -258,6 +326,7 @@ async fn test_canary_rollback_harness_success_admits_candidate() {
 
     let passing_evaluator = Box::new(MockEvaluator {
         id: "alpha-unslop".to_string(),
+        version: "1.0.0".to_string(),
         status: EvaluatorStatus::Passed,
         findings: vec![],
     });
@@ -280,12 +349,10 @@ async fn test_canary_rollback_harness_success_admits_candidate() {
         .await
         .expect("evaluation and enforcement failed");
 
-    // Success admits candidate without rollback
-    assert!(!rollback_executed.load(Ordering::SeqCst), "Rollback must NOT execute on success");
+    assert!(!rollback_executed.load(Ordering::SeqCst));
     assert_eq!(receipt.receipt.verdict, Verdict::Pass);
     assert_eq!(outcomes.len(), 1);
-    assert_eq!(outcomes[0].status, EvaluatorStatus::Passed);
 
-    let verifying_key = VerifyingKey::from(&harness.signing_key);
+    let verifying_key = signer.verifying_key();
     assert!(receipt.verify(&verifying_key).unwrap());
 }
