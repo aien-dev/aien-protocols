@@ -1,0 +1,23 @@
+[package]
+name = "aien-probe"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Sovereign native probe evaluation engine for calibrated non-generative judgments over JSON state"
+
+[dependencies]
+aien-protocol-types = { path = "../aien-protocol-types" }
+aien-evaluation-protocol = { path = "../aien-evaluation-protocol" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+thiserror = { workspace = true }
+async-trait = { workspace = true }
+tokio = { workspace = true }
+reqwest = { workspace = true }
+
+[dev-dependencies]
+axum = "0.7"
+p256 = { workspace = true }
+uuid = { workspace = true }
