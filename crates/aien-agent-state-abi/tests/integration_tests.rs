@@ -28,7 +28,10 @@ fn test_agent_state_roundtrip_and_lineage_verification() {
         objective: Some(Objective {
             objective_id: uuid::Uuid::new_v4(),
             description: "Verify agent state ABI transitions".to_string(),
-            success_criteria: vec!["Deterministic state hash".to_string(), "Zero unslop".to_string()],
+            success_criteria: vec![
+                "Deterministic state hash".to_string(),
+                "Zero unslop".to_string(),
+            ],
         }),
         context: ContextState {
             conversation: Vec::new(),
@@ -66,7 +69,9 @@ fn test_agent_state_roundtrip_and_lineage_verification() {
         sequence: SequenceNumber(1),
     };
 
-    let initial_digest = initial_state.compute_digest().expect("Failed to compute initial digest");
+    let initial_digest = initial_state
+        .compute_digest()
+        .expect("Failed to compute initial digest");
     assert_ne!(initial_digest, Digest32::ZERO);
 
     // Transition 1: RunStarted
@@ -145,11 +150,20 @@ async fn test_inference_client_cow_branching_contract() {
         isolation: parent_context.isolation,
     };
 
-    let receipt = client.branch_context(branch_req).await.expect("Failed to branch context");
+    let receipt = client
+        .branch_context(branch_req)
+        .await
+        .expect("Failed to branch context");
     assert_eq!(receipt.child_context.branch_id, child_branch_id);
     assert_eq!(receipt.child_context.generation, Generation(2));
-    assert_eq!(receipt.child_context.lineage.parent_context, Some(parent_context.context_id));
-    assert_eq!(receipt.child_context.lineage.parent_branch, Some(parent_context.branch_id));
+    assert_eq!(
+        receipt.child_context.lineage.parent_context,
+        Some(parent_context.context_id)
+    );
+    assert_eq!(
+        receipt.child_context.lineage.parent_branch,
+        Some(parent_context.branch_id)
+    );
     assert_eq!(receipt.shared_pages, 10);
     assert_eq!(receipt.copied_pages, 0);
 }

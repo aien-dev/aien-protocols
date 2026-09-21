@@ -51,7 +51,7 @@ impl EvaluationPlan {
         let mut hasher = Sha256::new();
         hasher.update(self.evaluation_id.0.as_bytes());
         hasher.update(self.subject.artifact_id.as_bytes());
-        hasher.update(&self.subject.digest.0);
+        hasher.update(self.subject.digest.0);
         hasher.update(self.profile.as_bytes());
 
         // Sort evaluators by evaluator_id to guarantee deterministic hashing
@@ -60,20 +60,20 @@ impl EvaluationPlan {
         for eval in &sorted_evals {
             hasher.update(eval.evaluator_id.as_bytes());
             hasher.update(eval.version.as_bytes());
-            hasher.update(&[if eval.required { 1u8 } else { 0u8 }]);
+            hasher.update([if eval.required { 1u8 } else { 0u8 }]);
         }
 
         if let Some(ref base) = self.baseline {
             hasher.update(b"baseline:present");
             hasher.update(base.artifact_id.as_bytes());
-            hasher.update(&base.digest.0);
+            hasher.update(base.digest.0);
         } else {
             hasher.update(b"baseline:none");
         }
 
         hasher.update(self.sandbox_profile.as_bytes());
-        hasher.update(&self.policy_digest.0);
-        hasher.update(&self.evaluator_manifest_digest.0);
+        hasher.update(self.policy_digest.0);
+        hasher.update(self.evaluator_manifest_digest.0);
 
         let result: [u8; 32] = hasher.finalize().into();
         Digest32(result)
@@ -85,7 +85,10 @@ impl EvaluationPlan {
     }
 
     /// Asserts that a proposed candidate plan preserves all frozen invariants of this authoritative plan.
-    pub fn assert_frozen_invariants(&self, candidate_plan: &EvaluationPlan) -> Result<(), EvaluationError> {
+    pub fn assert_frozen_invariants(
+        &self,
+        candidate_plan: &EvaluationPlan,
+    ) -> Result<(), EvaluationError> {
         if !self.verify_plan_digest() {
             return Err(EvaluationError::PlanDigestMismatch);
         }
@@ -93,37 +96,34 @@ impl EvaluationPlan {
             return Err(EvaluationError::PlanDigestMismatch);
         }
         if self.plan_digest != candidate_plan.plan_digest {
-            return Err(EvaluationError::PlanTamperingDetected(
-                format!("Plan digest altered: authoritative {} vs candidate {}",
-                    hex::encode(self.plan_digest.0),
-                    hex::encode(candidate_plan.plan_digest.0)
-                )
-            ));
+            return Err(EvaluationError::PlanTamperingDetected(format!(
+                "Plan digest altered: authoritative {} vs candidate {}",
+                hex::encode(self.plan_digest.0),
+                hex::encode(candidate_plan.plan_digest.0)
+            )));
         }
         if self.policy_digest != candidate_plan.policy_digest {
-            return Err(EvaluationError::PolicyTamperingDetected(
-                format!("Policy digest altered: authoritative {} vs candidate {}",
-                    hex::encode(self.policy_digest.0),
-                    hex::encode(candidate_plan.policy_digest.0)
-                )
-            ));
+            return Err(EvaluationError::PolicyTamperingDetected(format!(
+                "Policy digest altered: authoritative {} vs candidate {}",
+                hex::encode(self.policy_digest.0),
+                hex::encode(candidate_plan.policy_digest.0)
+            )));
         }
         if self.evaluator_manifest_digest != candidate_plan.evaluator_manifest_digest {
-            return Err(EvaluationError::ManifestTamperingDetected(
-                format!("Evaluator manifest digest altered: authoritative {} vs candidate {}",
-                    hex::encode(self.evaluator_manifest_digest.0),
-                    hex::encode(candidate_plan.evaluator_manifest_digest.0)
-                )
-            ));
+            return Err(EvaluationError::ManifestTamperingDetected(format!(
+                "Evaluator manifest digest altered: authoritative {} vs candidate {}",
+                hex::encode(self.evaluator_manifest_digest.0),
+                hex::encode(candidate_plan.evaluator_manifest_digest.0)
+            )));
         }
         if self.baseline != candidate_plan.baseline {
             return Err(EvaluationError::BaselineTamperingDetected(
-                "Baseline artifact reference altered".to_string()
+                "Baseline artifact reference altered".to_string(),
             ));
         }
         if self.evaluators != candidate_plan.evaluators {
             return Err(EvaluationError::EvaluatorTamperingDetected(
-                "Evaluator descriptors list altered".to_string()
+                "Evaluator descriptors list altered".to_string(),
             ));
         }
         Ok(())
@@ -176,15 +176,15 @@ impl EvaluatorOutcome {
         let mut hasher = Sha256::new();
         hasher.update(self.evaluator.evaluator_id.as_bytes());
         hasher.update(self.evaluator.version.as_bytes());
-        hasher.update(&self.evaluator.binary_digest.0);
-        hasher.update(&self.evaluator.config_digest.0);
+        hasher.update(self.evaluator.binary_digest.0);
+        hasher.update(self.evaluator.config_digest.0);
         let status_code: u8 = match self.status {
             EvaluatorStatus::Passed => 0,
             EvaluatorStatus::Failed => 1,
             EvaluatorStatus::Inconclusive => 2,
             EvaluatorStatus::TimedOut => 3,
         };
-        hasher.update(&[status_code]);
+        hasher.update([status_code]);
 
         for f in &self.findings {
             hasher.update(f.severity.as_bytes());
@@ -197,13 +197,13 @@ impl EvaluatorOutcome {
 
         for m in &self.measurements {
             hasher.update(m.metric.as_bytes());
-            hasher.update(&m.value.to_bits().to_le_bytes());
+            hasher.update(m.value.to_bits().to_le_bytes());
             hasher.update(m.unit.as_bytes());
         }
 
         for ev in &self.evidence {
             hasher.update(ev.artifact_id.as_bytes());
-            hasher.update(&ev.digest.0);
+            hasher.update(ev.digest.0);
         }
 
         let result: [u8; 32] = hasher.finalize().into();
@@ -295,19 +295,149 @@ impl VerifierSigner for SoftwareP256Signer {
 }
 
 /// Hardware TPM 2.0 bound key signer (strictly Tier 4).
+/// The private key resides strictly within the TPM 2.0 hardware microcontroller
+/// and never touches host memory. Signing executes directly on the physical TPM chip.
 pub struct TpmP256Signer {
     device_path: String,
-    signing_key: SigningKey,
+    key_context_path: std::path::PathBuf,
+    verifying_key: VerifyingKey,
     fingerprint: String,
 }
 
 impl TpmP256Signer {
-    pub fn new(device_path: String, signing_key: SigningKey) -> Self {
-        let verifying_key = VerifyingKey::from(&signing_key);
+    /// Connects to a physical TPM 2.0 device and provisions a hardware-bound ECC key in silicon.
+    pub fn connect(device_path: impl Into<String>) -> Result<Self, EvaluationError> {
+        let dev = device_path.into();
+        let tpm_dir = std::env::temp_dir().join(format!("aien-tpm-{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&tpm_dir).map_err(|e| {
+            EvaluationError::ExecutionFailed(format!("Failed to create TPM work dir: {}", e))
+        })?;
+
+        let primary_ctx = tpm_dir.join("primary.ctx");
+        let key_pub = tpm_dir.join("key.pub");
+        let key_priv = tpm_dir.join("key.priv");
+        let key_ctx = tpm_dir.join("key.ctx");
+        let pub_pem = tpm_dir.join("pub.pem");
+
+        // 1. Create primary key in owner hierarchy
+        let out1 = std::process::Command::new("tpm2_createprimary")
+            .args([
+                "-C",
+                "o",
+                "-g",
+                "sha256",
+                "-G",
+                "ecc",
+                "-c",
+                primary_ctx.to_str().unwrap(),
+            ])
+            .output()
+            .map_err(|e| {
+                EvaluationError::ExecutionFailed(format!("TPM createprimary failed: {}", e))
+            })?;
+        if !out1.status.success() {
+            return Err(EvaluationError::ExecutionFailed(format!(
+                "TPM createprimary error: {}",
+                String::from_utf8_lossy(&out1.stderr)
+            )));
+        }
+
+        // 2. Create ECC key in silicon
+        let out2 = std::process::Command::new("tpm2_create")
+            .args([
+                "-C",
+                primary_ctx.to_str().unwrap(),
+                "-g",
+                "sha256",
+                "-G",
+                "ecc256",
+                "-u",
+                key_pub.to_str().unwrap(),
+                "-r",
+                key_priv.to_str().unwrap(),
+            ])
+            .output()
+            .map_err(|e| {
+                EvaluationError::ExecutionFailed(format!("TPM create key failed: {}", e))
+            })?;
+        if !out2.status.success() {
+            return Err(EvaluationError::ExecutionFailed(format!(
+                "TPM create key error: {}",
+                String::from_utf8_lossy(&out2.stderr)
+            )));
+        }
+
+        // 3. Load key into TPM microcontroller
+        let out3 = std::process::Command::new("tpm2_load")
+            .args([
+                "-C",
+                primary_ctx.to_str().unwrap(),
+                "-u",
+                key_pub.to_str().unwrap(),
+                "-r",
+                key_priv.to_str().unwrap(),
+                "-c",
+                key_ctx.to_str().unwrap(),
+            ])
+            .output()
+            .map_err(|e| EvaluationError::ExecutionFailed(format!("TPM load failed: {}", e)))?;
+        if !out3.status.success() {
+            return Err(EvaluationError::ExecutionFailed(format!(
+                "TPM load error: {}",
+                String::from_utf8_lossy(&out3.stderr)
+            )));
+        }
+
+        // 4. Read public key from TPM in PEM format
+        let out4 = std::process::Command::new("tpm2_readpublic")
+            .args([
+                "-c",
+                key_ctx.to_str().unwrap(),
+                "-o",
+                pub_pem.to_str().unwrap(),
+                "-f",
+                "pem",
+            ])
+            .output()
+            .map_err(|e| {
+                EvaluationError::ExecutionFailed(format!("TPM readpublic failed: {}", e))
+            })?;
+        if !out4.status.success() {
+            return Err(EvaluationError::ExecutionFailed(format!(
+                "TPM readpublic error: {}",
+                String::from_utf8_lossy(&out4.stderr)
+            )));
+        }
+
+        let pem_str = std::fs::read_to_string(&pub_pem).map_err(|e| {
+            EvaluationError::ExecutionFailed(format!("Failed to read TPM pubkey PEM: {}", e))
+        })?;
+
+        use p256::pkcs8::DecodePublicKey;
+        let verifying_key = VerifyingKey::from_public_key_pem(&pem_str).map_err(|e| {
+            EvaluationError::ExecutionFailed(format!("Failed to parse TPM pubkey: {}", e))
+        })?;
+
+        let fingerprint = hex::encode(Sha256::digest(verifying_key.to_sec1_point(true).as_bytes()));
+
+        Ok(Self {
+            device_path: dev,
+            key_context_path: key_ctx,
+            verifying_key,
+            fingerprint,
+        })
+    }
+
+    pub fn from_existing_context(
+        device_path: impl Into<String>,
+        key_context_path: std::path::PathBuf,
+        verifying_key: VerifyingKey,
+    ) -> Self {
         let fingerprint = hex::encode(Sha256::digest(verifying_key.to_sec1_point(true).as_bytes()));
         Self {
-            device_path,
-            signing_key,
+            device_path: device_path.into(),
+            key_context_path,
+            verifying_key,
             fingerprint,
         }
     }
@@ -327,12 +457,52 @@ impl VerifierSigner for TpmP256Signer {
     }
 
     fn sign_digest(&self, digest: &[u8; 32]) -> Result<Vec<u8>, EvaluationError> {
-        let sig: Signature = self.signing_key.sign(digest);
-        Ok(sig.to_bytes().to_vec())
+        let digest_tmp = std::env::temp_dir().join(format!("tpm-in-{}.bin", uuid::Uuid::new_v4()));
+        let sig_tmp = std::env::temp_dir().join(format!("tpm-out-{}.bin", uuid::Uuid::new_v4()));
+
+        std::fs::write(&digest_tmp, digest).map_err(|e| {
+            EvaluationError::ExecutionFailed(format!("Failed to write digest: {}", e))
+        })?;
+
+        let out = std::process::Command::new("tpm2_sign")
+            .args([
+                "-c",
+                self.key_context_path.to_str().unwrap(),
+                "-g",
+                "sha256",
+                "-o",
+                sig_tmp.to_str().unwrap(),
+                "-f",
+                "plain",
+                digest_tmp.to_str().unwrap(),
+            ])
+            .output()
+            .map_err(|e| EvaluationError::ExecutionFailed(format!("TPM sign failed: {}", e)))?;
+
+        let _ = std::fs::remove_file(&digest_tmp);
+
+        if !out.status.success() {
+            let _ = std::fs::remove_file(&sig_tmp);
+            return Err(EvaluationError::ExecutionFailed(format!(
+                "TPM sign command failed: {}",
+                String::from_utf8_lossy(&out.stderr)
+            )));
+        }
+
+        let der_sig = std::fs::read(&sig_tmp).map_err(|e| {
+            EvaluationError::ExecutionFailed(format!("Failed to read TPM signature: {}", e))
+        })?;
+        let _ = std::fs::remove_file(&sig_tmp);
+
+        let signature = Signature::from_der(&der_sig).map_err(|e| {
+            EvaluationError::ExecutionFailed(format!("Failed to parse TPM DER signature: {}", e))
+        })?;
+
+        Ok(signature.to_bytes().to_vec())
     }
 
     fn verifying_key(&self) -> VerifyingKey {
-        VerifyingKey::from(&self.signing_key)
+        self.verifying_key
     }
 }
 
@@ -354,29 +524,29 @@ pub struct EvaluationReceipt {
 impl EvaluationReceipt {
     pub fn compute_receipt_digest(&self) -> Digest32 {
         let mut hasher = Sha256::new();
-        hasher.update(&self.protocol_version.to_le_bytes());
+        hasher.update(self.protocol_version.to_le_bytes());
         hasher.update(self.evaluation_id.0.as_bytes());
-        hasher.update(&self.request_digest.0);
-        hasher.update(&self.subject_digest.0);
-        hasher.update(&self.plan_digest.0);
-        hasher.update(&self.evidence_root.0);
-        hasher.update(&self.outcomes_root.0);
+        hasher.update(self.request_digest.0);
+        hasher.update(self.subject_digest.0);
+        hasher.update(self.plan_digest.0);
+        hasher.update(self.evidence_root.0);
+        hasher.update(self.outcomes_root.0);
 
         let verdict_byte = match self.verdict {
             Verdict::Pass => 0u8,
             Verdict::Fail => 1u8,
             Verdict::Indeterminate => 2u8,
         };
-        hasher.update(&[verdict_byte]);
+        hasher.update([verdict_byte]);
 
         hasher.update(self.verifier.principal_id.as_bytes());
         hasher.update(self.verifier.key_id.as_bytes());
-        hasher.update(&self.verifier.trust_epoch.to_le_bytes());
-        hasher.update(&self.verifier.trusted_build_digest.0);
-        hasher.update(&self.verifier.policy_bundle_digest.0);
+        hasher.update(self.verifier.trust_epoch.to_le_bytes());
+        hasher.update(self.verifier.trusted_build_digest.0);
+        hasher.update(self.verifier.policy_bundle_digest.0);
 
-        hasher.update(&self.started_at.0.to_le_bytes());
-        hasher.update(&self.completed_at.0.to_le_bytes());
+        hasher.update(self.started_at.0.to_le_bytes());
+        hasher.update(self.completed_at.0.to_le_bytes());
 
         let result: [u8; 32] = hasher.finalize().into();
         Digest32(result)
@@ -419,8 +589,9 @@ pub struct SignedEvaluationReceipt {
 
 impl SignedEvaluationReceipt {
     pub fn verify(&self, verifying_key: &VerifyingKey) -> Result<bool, EvaluationError> {
-        let sig = Signature::from_slice(&self.signature)
-            .map_err(|e| EvaluationError::VerificationFailed(format!("Invalid signature format: {e}")))?;
+        let sig = Signature::from_slice(&self.signature).map_err(|e| {
+            EvaluationError::VerificationFailed(format!("Invalid signature format: {e}"))
+        })?;
         let digest = self.receipt.compute_receipt_digest();
         verifying_key
             .verify(&digest.0, &sig)
@@ -457,11 +628,10 @@ pub enum EvaluationError {
         expected: String,
         actual: String,
     },
-    #[error("Verifier key identity mismatch: receipt key_id {expected} vs signer fingerprint {actual}")]
-    KeyIdentityMismatch {
-        expected: String,
-        actual: String,
-    },
+    #[error(
+        "Verifier key identity mismatch: receipt key_id {expected} vs signer fingerprint {actual}"
+    )]
+    KeyIdentityMismatch { expected: String, actual: String },
     #[error("Rollback execution failed: {0}")]
     RollbackFailed(String),
     #[error("Verifier verification error: {0}")]
@@ -471,7 +641,11 @@ pub enum EvaluationError {
 #[async_trait::async_trait]
 pub trait Evaluator: Send + Sync {
     fn descriptor(&self) -> EvaluatorDescriptor;
-    async fn evaluate(&self, plan: &EvaluationPlan, subject: &ArtifactRef) -> Result<EvaluatorOutcome, EvaluationError>;
+    async fn evaluate(
+        &self,
+        plan: &EvaluationPlan,
+        subject: &ArtifactRef,
+    ) -> Result<EvaluatorOutcome, EvaluationError>;
 }
 
 pub fn compute_merkle_root(digests: &[Digest32]) -> Digest32 {
@@ -483,11 +657,11 @@ pub fn compute_merkle_root(digests: &[Digest32]) -> Digest32 {
         let mut next = Vec::new();
         for chunk in current.chunks(2) {
             let mut hasher = Sha256::new();
-            hasher.update(&chunk[0].0);
+            hasher.update(chunk[0].0);
             if chunk.len() > 1 {
-                hasher.update(&chunk[1].0);
+                hasher.update(chunk[1].0);
             } else {
-                hasher.update(&chunk[0].0);
+                hasher.update(chunk[0].0);
             }
             next.push(Digest32(hasher.finalize().into()));
         }
@@ -503,14 +677,8 @@ pub struct CanaryRollbackHarness {
 }
 
 impl CanaryRollbackHarness {
-    pub fn new(
-        verifier: VerifierIdentity,
-        signer: Arc<dyn VerifierSigner>,
-    ) -> Self {
-        Self {
-            verifier,
-            signer,
-        }
+    pub fn new(verifier: VerifierIdentity, signer: Arc<dyn VerifierSigner>) -> Self {
+        Self { verifier, signer }
     }
 
     /// Executes candidate canary evaluation against the frozen plan.
@@ -543,7 +711,11 @@ impl CanaryRollbackHarness {
             provided_map.insert(id, eval);
         }
 
-        let plan_ids: HashSet<String> = plan.evaluators.iter().map(|d| d.evaluator_id.clone()).collect();
+        let plan_ids: HashSet<String> = plan
+            .evaluators
+            .iter()
+            .map(|d| d.evaluator_id.clone())
+            .collect();
         for provided_id in provided_map.keys() {
             if !plan_ids.contains(provided_id) {
                 return Err(EvaluationError::UnexpectedEvaluator(provided_id.clone()));
@@ -562,7 +734,9 @@ impl CanaryRollbackHarness {
                     });
                 }
             } else if expected.required {
-                return Err(EvaluationError::MissingRequiredEvaluator(expected.evaluator_id.clone()));
+                return Err(EvaluationError::MissingRequiredEvaluator(
+                    expected.evaluator_id.clone(),
+                ));
             }
         }
 
@@ -588,7 +762,9 @@ impl CanaryRollbackHarness {
             }
 
             for f in &outcome.findings {
-                if f.severity.eq_ignore_ascii_case("fatal") || f.severity.eq_ignore_ascii_case("invariantviolation") {
+                if f.severity.eq_ignore_ascii_case("fatal")
+                    || f.severity.eq_ignore_ascii_case("invariantviolation")
+                {
                     passed_all = false;
                 }
             }
@@ -600,7 +776,9 @@ impl CanaryRollbackHarness {
             Verdict::Pass
         } else {
             // Hard invariant or required evaluator failed: execute rollback
-            rollback_action().await.map_err(EvaluationError::RollbackFailed)?;
+            rollback_action()
+                .await
+                .map_err(EvaluationError::RollbackFailed)?;
             Verdict::Fail
         };
 
@@ -610,7 +788,7 @@ impl CanaryRollbackHarness {
 
         let receipt = EvaluationReceipt {
             protocol_version: 1,
-            evaluation_id: plan.evaluation_id.clone(),
+            evaluation_id: plan.evaluation_id,
             request_digest: Digest32([0u8; 32]),
             subject_digest: candidate.digest,
             plan_digest: plan.plan_digest,

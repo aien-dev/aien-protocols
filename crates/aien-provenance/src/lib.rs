@@ -74,7 +74,12 @@ pub enum ProvenanceError {
 }
 
 impl SourceGrant {
-    pub fn new(source_uri: String, license_spdx: String, permissions: GrantPermissions, issuer: String) -> Self {
+    pub fn new(
+        source_uri: String,
+        license_spdx: String,
+        permissions: GrantPermissions,
+        issuer: String,
+    ) -> Self {
         Self {
             grant_id: Uuid::new_v4(),
             source_uri,
@@ -97,11 +102,11 @@ impl SourceGrant {
         hasher.update(self.grant_id.as_bytes());
         hasher.update(self.source_uri.as_bytes());
         hasher.update(self.license_spdx.as_bytes());
-        hasher.update(&self.permissions.bits().to_le_bytes());
+        hasher.update(self.permissions.bits().to_le_bytes());
         hasher.update(self.issuer.as_bytes());
         if let Some(exp) = self.expires_at_epoch_sec {
             hasher.update(b"exp:present");
-            hasher.update(&exp.to_le_bytes());
+            hasher.update(exp.to_le_bytes());
         } else {
             hasher.update(b"exp:none");
         }
@@ -116,7 +121,10 @@ impl SourceGrant {
     }
 
     /// Verifies the cryptographic signature of the grant against the authority verifying key.
-    pub fn verify_signature(&self, authority_verifying_key: &VerifyingKey) -> Result<(), ProvenanceError> {
+    pub fn verify_signature(
+        &self,
+        authority_verifying_key: &VerifyingKey,
+    ) -> Result<(), ProvenanceError> {
         let Some(ref sig_bytes) = self.issuer_signature else {
             return Err(ProvenanceError::MissingSignature);
         };
@@ -150,7 +158,10 @@ impl SourceGrant {
     }
 
     pub fn verify_license(&self, allowed_licenses: &[&str]) -> Result<(), ProvenanceError> {
-        if allowed_licenses.iter().any(|&l| l.eq_ignore_ascii_case(&self.license_spdx)) {
+        if allowed_licenses
+            .iter()
+            .any(|&l| l.eq_ignore_ascii_case(&self.license_spdx))
+        {
             Ok(())
         } else {
             Err(ProvenanceError::IncompatibleLicense {
@@ -222,7 +233,10 @@ mod tests {
         .with_expiration(1000);
 
         // Missing signature rejected
-        assert_eq!(grant.verify_signature(&verifying_key), Err(ProvenanceError::MissingSignature));
+        assert_eq!(
+            grant.verify_signature(&verifying_key),
+            Err(ProvenanceError::MissingSignature)
+        );
 
         // Sign grant
         grant.sign(&signing_key);
@@ -234,9 +248,19 @@ mod tests {
 
         // Validity checks
         assert!(grant.verify_validity(999).is_ok());
-        assert_eq!(grant.verify_validity(1001), Err(ProvenanceError::GrantExpired(1000)));
+        assert_eq!(
+            grant.verify_validity(1001),
+            Err(ProvenanceError::GrantExpired(1000))
+        );
 
         // verify_all succeeds within window with valid key
-        assert!(grant.verify_all(GrantPermissions::TRAIN, &["Apache-2.0"], 950, Some(&verifying_key)).is_ok());
+        assert!(grant
+            .verify_all(
+                GrantPermissions::TRAIN,
+                &["Apache-2.0"],
+                950,
+                Some(&verifying_key)
+            )
+            .is_ok());
     }
 }
