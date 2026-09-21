@@ -102,11 +102,11 @@ impl SourceGrant {
         hasher.update(self.grant_id.as_bytes());
         hasher.update(self.source_uri.as_bytes());
         hasher.update(self.license_spdx.as_bytes());
-        hasher.update(&self.permissions.bits().to_le_bytes());
+        hasher.update(self.permissions.bits().to_le_bytes());
         hasher.update(self.issuer.as_bytes());
         if let Some(exp) = self.expires_at_epoch_sec {
             hasher.update(b"exp:present");
-            hasher.update(&exp.to_le_bytes());
+            hasher.update(exp.to_le_bytes());
         } else {
             hasher.update(b"exp:none");
         }

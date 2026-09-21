@@ -51,7 +51,7 @@ impl EvaluationPlan {
         let mut hasher = Sha256::new();
         hasher.update(self.evaluation_id.0.as_bytes());
         hasher.update(self.subject.artifact_id.as_bytes());
-        hasher.update(&self.subject.digest.0);
+        hasher.update(self.subject.digest.0);
         hasher.update(self.profile.as_bytes());
 
         // Sort evaluators by evaluator_id to guarantee deterministic hashing
@@ -60,20 +60,20 @@ impl EvaluationPlan {
         for eval in &sorted_evals {
             hasher.update(eval.evaluator_id.as_bytes());
             hasher.update(eval.version.as_bytes());
-            hasher.update(&[if eval.required { 1u8 } else { 0u8 }]);
+            hasher.update([if eval.required { 1u8 } else { 0u8 }]);
         }
 
         if let Some(ref base) = self.baseline {
             hasher.update(b"baseline:present");
             hasher.update(base.artifact_id.as_bytes());
-            hasher.update(&base.digest.0);
+            hasher.update(base.digest.0);
         } else {
             hasher.update(b"baseline:none");
         }
 
         hasher.update(self.sandbox_profile.as_bytes());
-        hasher.update(&self.policy_digest.0);
-        hasher.update(&self.evaluator_manifest_digest.0);
+        hasher.update(self.policy_digest.0);
+        hasher.update(self.evaluator_manifest_digest.0);
 
         let result: [u8; 32] = hasher.finalize().into();
         Digest32(result)
@@ -176,15 +176,15 @@ impl EvaluatorOutcome {
         let mut hasher = Sha256::new();
         hasher.update(self.evaluator.evaluator_id.as_bytes());
         hasher.update(self.evaluator.version.as_bytes());
-        hasher.update(&self.evaluator.binary_digest.0);
-        hasher.update(&self.evaluator.config_digest.0);
+        hasher.update(self.evaluator.binary_digest.0);
+        hasher.update(self.evaluator.config_digest.0);
         let status_code: u8 = match self.status {
             EvaluatorStatus::Passed => 0,
             EvaluatorStatus::Failed => 1,
             EvaluatorStatus::Inconclusive => 2,
             EvaluatorStatus::TimedOut => 3,
         };
-        hasher.update(&[status_code]);
+        hasher.update([status_code]);
 
         for f in &self.findings {
             hasher.update(f.severity.as_bytes());
@@ -197,13 +197,13 @@ impl EvaluatorOutcome {
 
         for m in &self.measurements {
             hasher.update(m.metric.as_bytes());
-            hasher.update(&m.value.to_bits().to_le_bytes());
+            hasher.update(m.value.to_bits().to_le_bytes());
             hasher.update(m.unit.as_bytes());
         }
 
         for ev in &self.evidence {
             hasher.update(ev.artifact_id.as_bytes());
-            hasher.update(&ev.digest.0);
+            hasher.update(ev.digest.0);
         }
 
         let result: [u8; 32] = hasher.finalize().into();
@@ -524,29 +524,29 @@ pub struct EvaluationReceipt {
 impl EvaluationReceipt {
     pub fn compute_receipt_digest(&self) -> Digest32 {
         let mut hasher = Sha256::new();
-        hasher.update(&self.protocol_version.to_le_bytes());
+        hasher.update(self.protocol_version.to_le_bytes());
         hasher.update(self.evaluation_id.0.as_bytes());
-        hasher.update(&self.request_digest.0);
-        hasher.update(&self.subject_digest.0);
-        hasher.update(&self.plan_digest.0);
-        hasher.update(&self.evidence_root.0);
-        hasher.update(&self.outcomes_root.0);
+        hasher.update(self.request_digest.0);
+        hasher.update(self.subject_digest.0);
+        hasher.update(self.plan_digest.0);
+        hasher.update(self.evidence_root.0);
+        hasher.update(self.outcomes_root.0);
 
         let verdict_byte = match self.verdict {
             Verdict::Pass => 0u8,
             Verdict::Fail => 1u8,
             Verdict::Indeterminate => 2u8,
         };
-        hasher.update(&[verdict_byte]);
+        hasher.update([verdict_byte]);
 
         hasher.update(self.verifier.principal_id.as_bytes());
         hasher.update(self.verifier.key_id.as_bytes());
-        hasher.update(&self.verifier.trust_epoch.to_le_bytes());
-        hasher.update(&self.verifier.trusted_build_digest.0);
-        hasher.update(&self.verifier.policy_bundle_digest.0);
+        hasher.update(self.verifier.trust_epoch.to_le_bytes());
+        hasher.update(self.verifier.trusted_build_digest.0);
+        hasher.update(self.verifier.policy_bundle_digest.0);
 
-        hasher.update(&self.started_at.0.to_le_bytes());
-        hasher.update(&self.completed_at.0.to_le_bytes());
+        hasher.update(self.started_at.0.to_le_bytes());
+        hasher.update(self.completed_at.0.to_le_bytes());
 
         let result: [u8; 32] = hasher.finalize().into();
         Digest32(result)
@@ -657,11 +657,11 @@ pub fn compute_merkle_root(digests: &[Digest32]) -> Digest32 {
         let mut next = Vec::new();
         for chunk in current.chunks(2) {
             let mut hasher = Sha256::new();
-            hasher.update(&chunk[0].0);
+            hasher.update(chunk[0].0);
             if chunk.len() > 1 {
-                hasher.update(&chunk[1].0);
+                hasher.update(chunk[1].0);
             } else {
-                hasher.update(&chunk[0].0);
+                hasher.update(chunk[0].0);
             }
             next.push(Digest32(hasher.finalize().into()));
         }
@@ -788,7 +788,7 @@ impl CanaryRollbackHarness {
 
         let receipt = EvaluationReceipt {
             protocol_version: 1,
-            evaluation_id: plan.evaluation_id.clone(),
+            evaluation_id: plan.evaluation_id,
             request_digest: Digest32([0u8; 32]),
             subject_digest: candidate.digest,
             plan_digest: plan.plan_digest,
