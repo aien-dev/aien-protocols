@@ -9,6 +9,7 @@ members = [
     "crates/aien-event-protocol",
     "crates/aien-evaluation-protocol",
     "crates/aien-provenance",
+    "crates/aien-probe",
 ]
 
 [workspace.package]

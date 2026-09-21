@@ -88,6 +88,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "aien-probe"
+version = "0.1.0"
+dependencies = [
+ "aien-evaluation-protocol",
+ "aien-protocol-types",
+ "async-trait",
+ "axum",
+ "hex",
+ "p256",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "thiserror 1.0.69",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "aien-protocol-types"
 version = "0.1.0"
 dependencies = [
