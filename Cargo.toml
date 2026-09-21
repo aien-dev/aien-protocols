@@ -28,3 +28,4 @@ tokio = { version = "1.37", features = ["full"] }
 async-trait = "0.1"
 thiserror = "1.0"
 bitflags = { version = "2.5", features = ["serde"] }
+p256 = { version = "0.14.0", features = ["ecdsa"] }
