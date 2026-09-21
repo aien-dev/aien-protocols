@@ -1,0 +1,13 @@
+[package]
+name = "aien-action-protocol"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Action execution, capability grants, and confinement authorization protocol"
+
+[dependencies]
+aien-protocol-types = { path = "../aien-protocol-types" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+thiserror = { workspace = true }

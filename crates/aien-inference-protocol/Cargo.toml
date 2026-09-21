@@ -1,0 +1,15 @@
+[package]
+name = "aien-inference-protocol"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Inference execution contract, leased KV pinning, and copy-on-write context branching"
+
+[dependencies]
+aien-protocol-types = { path = "../aien-protocol-types" }
+aien-provenance = { path = "../aien-provenance" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }

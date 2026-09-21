@@ -1,0 +1,14 @@
+[package]
+name = "aien-provenance"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Deterministic digest computation, Merkle trees, and cryptographic verification"
+
+[dependencies]
+aien-protocol-types = { path = "../aien-protocol-types" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+thiserror = { workspace = true }
