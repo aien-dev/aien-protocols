@@ -158,7 +158,10 @@ pub enum InferenceError {
     #[error("Context not found: {0:?}")]
     ContextNotFound(ContextId),
     #[error("Stale generation: expected {expected:?}, got {actual:?}")]
-    StaleGeneration { expected: Generation, actual: Generation },
+    StaleGeneration {
+        expected: Generation,
+        actual: Generation,
+    },
     #[error("Stale runtime epoch: engine restarted, must reconstruct from recipe")]
     StaleRuntimeEpoch,
     #[error("Cache isolation error: domain unauthorized")]
@@ -172,6 +175,9 @@ pub enum InferenceError {
 #[async_trait::async_trait]
 pub trait InferenceService: Send + Sync {
     async fn infer(&self, req: InferenceRequest) -> Result<InferenceResponse, InferenceError>;
-    async fn branch_context(&self, req: BranchContextRequest) -> Result<BranchContextReceipt, InferenceError>;
+    async fn branch_context(
+        &self,
+        req: BranchContextRequest,
+    ) -> Result<BranchContextReceipt, InferenceError>;
     async fn get_capabilities(&self) -> Result<InferenceCapabilities, InferenceError>;
 }

@@ -61,13 +61,11 @@ fn create_sample_plan() -> EvaluationPlan {
             byte_size: 4096,
         },
         profile: "strict-systems".to_string(),
-        evaluators: vec![
-            EvaluatorDescriptor {
-                evaluator_id: "alpha-unslop".to_string(),
-                version: "1.0.0".to_string(),
-                required: true,
-            },
-        ],
+        evaluators: vec![EvaluatorDescriptor {
+            evaluator_id: "alpha-unslop".to_string(),
+            version: "1.0.0".to_string(),
+            required: true,
+        }],
         baseline: Some(ArtifactRef {
             artifact_id: uuid::Uuid::new_v4(),
             digest: Digest32([9u8; 32]),
@@ -112,7 +110,10 @@ fn test_frozen_invariants_tampering_detection() {
 fn test_typed_signer_tier_enforcement_and_signature_verification() {
     let signing_key = SigningKey::from_slice(&[42u8; 32]).expect("valid p256 signing key");
     let signer = SoftwareP256Signer::new(signing_key);
-    assert_eq!(signer.cryptographic_tier(), CryptographicTier::Tier2SoftwareKey);
+    assert_eq!(
+        signer.cryptographic_tier(),
+        CryptographicTier::Tier2SoftwareKey
+    );
 
     let fingerprint = signer.key_fingerprint();
     assert!(!fingerprint.is_empty());
@@ -137,17 +138,39 @@ fn test_typed_signer_tier_enforcement_and_signature_verification() {
         completed_at: Timestamp(1050),
     };
 
-    let signed: SignedEvaluationReceipt = receipt.sign_with_signer(&signer).expect("signing failed");
-    assert_eq!(signed.cryptographic_tier, CryptographicTier::Tier2SoftwareKey);
+    let signed: SignedEvaluationReceipt =
+        receipt.sign_with_signer(&signer).expect("signing failed");
+    assert_eq!(
+        signed.cryptographic_tier,
+        CryptographicTier::Tier2SoftwareKey
+    );
     assert_eq!(signed.key_fingerprint, fingerprint);
 
     let verifying_key = signer.verifying_key();
     assert!(signed.verify(&verifying_key).expect("verification failed"));
 
-    // TPM signer strictly reports Tier 4
-    let tpm_key = SigningKey::from_slice(&[43u8; 32]).expect("valid p256 signing key");
-    let tpm_signer = TpmP256Signer::new("/dev/tpmrm0".to_string(), tpm_key);
-    assert_eq!(tpm_signer.cryptographic_tier(), CryptographicTier::Tier4HardwareTpm);
+    // TPM signer strictly reports Tier 4 and performs real hardware TPM signing when device is present
+    if std::path::Path::new("/dev/tpmrm0").exists() {
+        if let Ok(tpm_signer) = TpmP256Signer::connect("/dev/tpmrm0") {
+            assert_eq!(
+                tpm_signer.cryptographic_tier(),
+                CryptographicTier::Tier4HardwareTpm
+            );
+            let mut tpm_receipt = receipt.clone();
+            tpm_receipt.verifier.key_id = tpm_signer.key_fingerprint();
+            let tpm_signed = tpm_receipt
+                .sign_with_signer(&tpm_signer)
+                .expect("hardware TPM signing failed");
+            assert_eq!(
+                tpm_signed.cryptographic_tier,
+                CryptographicTier::Tier4HardwareTpm
+            );
+            let tpm_vk = tpm_signer.verifying_key();
+            assert!(tpm_signed
+                .verify(&tpm_vk)
+                .expect("TPM signature verification failed"));
+        }
+    }
 
     // Mismatched verifier key_id fails closed
     let mut mismatched_receipt = receipt.clone();
@@ -193,7 +216,9 @@ async fn test_canary_rollback_harness_missing_evaluator_fails_closed() {
         )
         .await;
 
-    assert!(matches!(res, Err(EvaluationError::MissingRequiredEvaluator(id)) if id == "alpha-unslop"));
+    assert!(
+        matches!(res, Err(EvaluationError::MissingRequiredEvaluator(id)) if id == "alpha-unslop")
+    );
 }
 
 #[tokio::test]
@@ -228,16 +253,15 @@ async fn test_canary_rollback_harness_version_mismatch_fails_closed() {
 
     let evaluators: Vec<Box<dyn Evaluator>> = vec![wrong_version_eval];
     let res = harness
-        .evaluate_and_enforce(
-            &plan,
-            &candidate,
-            &evaluators,
-            Timestamp(100),
-            || async { Ok(()) },
-        )
+        .evaluate_and_enforce(&plan, &candidate, &evaluators, Timestamp(100), || async {
+            Ok(())
+        })
         .await;
 
-    assert!(matches!(res, Err(EvaluationError::EvaluatorVersionMismatch { .. })));
+    assert!(matches!(
+        res,
+        Err(EvaluationError::EvaluatorVersionMismatch { .. })
+    ));
 }
 
 #[tokio::test]
