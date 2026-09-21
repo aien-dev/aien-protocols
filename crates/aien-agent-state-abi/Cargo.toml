@@ -1,0 +1,21 @@
+[package]
+name = "aien-agent-state-abi"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Canonical Agent State ABI: snapshot, transition events, and lineage verification"
+
+[dependencies]
+aien-protocol-types = { path = "../aien-protocol-types" }
+aien-inference-protocol = { path = "../aien-inference-protocol" }
+aien-action-protocol = { path = "../aien-action-protocol" }
+aien-provenance = { path = "../aien-provenance" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
+aien-evaluation-protocol = { path = "../aien-evaluation-protocol" }
+aien-inference-client = { path = "../aien-inference-client" }
