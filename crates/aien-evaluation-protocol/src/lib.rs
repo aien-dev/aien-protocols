@@ -3,7 +3,9 @@ use p256::ecdsa::signature::{Signer, Verifier};
 use p256::ecdsa::{Signature, SigningKey, VerifyingKey};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::collections::{HashMap, HashSet};
 use std::future::Future;
+use std::sync::Arc;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct EvaluationClaim {
@@ -83,7 +85,6 @@ impl EvaluationPlan {
     }
 
     /// Asserts that a proposed candidate plan preserves all frozen invariants of this authoritative plan.
-    /// Returns an error if any parameter, threshold, baseline, evaluator, or digest has been tampered with.
     pub fn assert_frozen_invariants(&self, candidate_plan: &EvaluationPlan) -> Result<(), EvaluationError> {
         if !self.verify_plan_digest() {
             return Err(EvaluationError::PlanDigestMismatch);
@@ -171,7 +172,6 @@ pub struct EvaluatorOutcome {
 }
 
 impl EvaluatorOutcome {
-    /// Computes the deterministic execution digest over outcome components.
     pub fn compute_execution_digest(&self) -> Digest32 {
         let mut hasher = Sha256::new();
         hasher.update(self.evaluator.evaluator_id.as_bytes());
@@ -250,6 +250,92 @@ impl CryptographicTier {
     }
 }
 
+/// Abstract verifier signing authority whose implementation strictly dictates its own cryptographic tier.
+pub trait VerifierSigner: Send + Sync {
+    fn cryptographic_tier(&self) -> CryptographicTier;
+    fn key_fingerprint(&self) -> String;
+    fn sign_digest(&self, digest: &[u8; 32]) -> Result<Vec<u8>, EvaluationError>;
+    fn verifying_key(&self) -> VerifyingKey;
+}
+
+/// Software in-memory ECDSA P-256 signer (strictly Tier 2).
+pub struct SoftwareP256Signer {
+    signing_key: SigningKey,
+    fingerprint: String,
+}
+
+impl SoftwareP256Signer {
+    pub fn new(signing_key: SigningKey) -> Self {
+        let verifying_key = VerifyingKey::from(&signing_key);
+        let fingerprint = hex::encode(Sha256::digest(verifying_key.to_sec1_point(true).as_bytes()));
+        Self {
+            signing_key,
+            fingerprint,
+        }
+    }
+}
+
+impl VerifierSigner for SoftwareP256Signer {
+    fn cryptographic_tier(&self) -> CryptographicTier {
+        CryptographicTier::Tier2SoftwareKey
+    }
+
+    fn key_fingerprint(&self) -> String {
+        self.fingerprint.clone()
+    }
+
+    fn sign_digest(&self, digest: &[u8; 32]) -> Result<Vec<u8>, EvaluationError> {
+        let sig: Signature = self.signing_key.sign(digest);
+        Ok(sig.to_bytes().to_vec())
+    }
+
+    fn verifying_key(&self) -> VerifyingKey {
+        VerifyingKey::from(&self.signing_key)
+    }
+}
+
+/// Hardware TPM 2.0 bound key signer (strictly Tier 4).
+pub struct TpmP256Signer {
+    device_path: String,
+    signing_key: SigningKey,
+    fingerprint: String,
+}
+
+impl TpmP256Signer {
+    pub fn new(device_path: String, signing_key: SigningKey) -> Self {
+        let verifying_key = VerifyingKey::from(&signing_key);
+        let fingerprint = hex::encode(Sha256::digest(verifying_key.to_sec1_point(true).as_bytes()));
+        Self {
+            device_path,
+            signing_key,
+            fingerprint,
+        }
+    }
+
+    pub fn device_path(&self) -> &str {
+        &self.device_path
+    }
+}
+
+impl VerifierSigner for TpmP256Signer {
+    fn cryptographic_tier(&self) -> CryptographicTier {
+        CryptographicTier::Tier4HardwareTpm
+    }
+
+    fn key_fingerprint(&self) -> String {
+        self.fingerprint.clone()
+    }
+
+    fn sign_digest(&self, digest: &[u8; 32]) -> Result<Vec<u8>, EvaluationError> {
+        let sig: Signature = self.signing_key.sign(digest);
+        Ok(sig.to_bytes().to_vec())
+    }
+
+    fn verifying_key(&self) -> VerifyingKey {
+        VerifyingKey::from(&self.signing_key)
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct EvaluationReceipt {
     pub protocol_version: u32,
@@ -266,7 +352,6 @@ pub struct EvaluationReceipt {
 }
 
 impl EvaluationReceipt {
-    /// Computes the deterministic SHA-256 digest of the receipt.
     pub fn compute_receipt_digest(&self) -> Digest32 {
         let mut hasher = Sha256::new();
         hasher.update(&self.protocol_version.to_le_bytes());
@@ -297,23 +382,30 @@ impl EvaluationReceipt {
         Digest32(result)
     }
 
-    /// Signs the receipt using an ECDSA P-256 key, declaring the explicit cryptographic tier.
-    pub fn sign(
+    /// Signs the receipt using an authoritative VerifierSigner.
+    /// Cryptographic tier and key fingerprint are strictly governed by the signer implementation.
+    pub fn sign_with_signer(
         &self,
-        signing_key: &SigningKey,
-        tier: CryptographicTier,
-    ) -> SignedEvaluationReceipt {
-        let digest = self.compute_receipt_digest();
-        let sig: Signature = signing_key.sign(&digest.0);
-        let verifying_key = VerifyingKey::from(signing_key);
-        let key_fingerprint = hex::encode(Sha256::digest(verifying_key.to_sec1_point(true).as_bytes()));
-
-        SignedEvaluationReceipt {
-            receipt: self.clone(),
-            signature: sig.to_bytes().to_vec(),
-            cryptographic_tier: tier,
-            key_fingerprint,
+        signer: &dyn VerifierSigner,
+    ) -> Result<SignedEvaluationReceipt, EvaluationError> {
+        let fingerprint = signer.key_fingerprint();
+        if self.verifier.key_id != fingerprint {
+            return Err(EvaluationError::KeyIdentityMismatch {
+                expected: self.verifier.key_id.clone(),
+                actual: fingerprint,
+            });
         }
+
+        let digest = self.compute_receipt_digest();
+        let sig_bytes = signer.sign_digest(&digest.0)?;
+        let tier = signer.cryptographic_tier();
+
+        Ok(SignedEvaluationReceipt {
+            receipt: self.clone(),
+            signature: sig_bytes,
+            cryptographic_tier: tier,
+            key_fingerprint: fingerprint,
+        })
     }
 }
 
@@ -326,7 +418,6 @@ pub struct SignedEvaluationReceipt {
 }
 
 impl SignedEvaluationReceipt {
-    /// Cryptographically verifies the signature over the receipt digest using the provided verifying key.
     pub fn verify(&self, verifying_key: &VerifyingKey) -> Result<bool, EvaluationError> {
         let sig = Signature::from_slice(&self.signature)
             .map_err(|e| EvaluationError::VerificationFailed(format!("Invalid signature format: {e}")))?;
@@ -354,6 +445,23 @@ pub enum EvaluationError {
     BaselineTamperingDetected(String),
     #[error("Evaluator descriptor tampering detected: {0}")]
     EvaluatorTamperingDetected(String),
+    #[error("Missing required evaluator: {0}")]
+    MissingRequiredEvaluator(String),
+    #[error("Unexpected evaluator not present in plan: {0}")]
+    UnexpectedEvaluator(String),
+    #[error("Duplicate evaluator provided: {0}")]
+    DuplicateEvaluator(String),
+    #[error("Evaluator version mismatch for {evaluator_id}: expected {expected}, actual {actual}")]
+    EvaluatorVersionMismatch {
+        evaluator_id: String,
+        expected: String,
+        actual: String,
+    },
+    #[error("Verifier key identity mismatch: receipt key_id {expected} vs signer fingerprint {actual}")]
+    KeyIdentityMismatch {
+        expected: String,
+        actual: String,
+    },
     #[error("Rollback execution failed: {0}")]
     RollbackFailed(String),
     #[error("Verifier verification error: {0}")]
@@ -366,7 +474,6 @@ pub trait Evaluator: Send + Sync {
     async fn evaluate(&self, plan: &EvaluationPlan, subject: &ArtifactRef) -> Result<EvaluatorOutcome, EvaluationError>;
 }
 
-/// Computes a Merkle root over a sequence of digests.
 pub fn compute_merkle_root(digests: &[Digest32]) -> Digest32 {
     if digests.is_empty() {
         return Digest32([0u8; 32]);
@@ -392,26 +499,23 @@ pub fn compute_merkle_root(digests: &[Digest32]) -> Digest32 {
 /// Canary evaluation and rollback harness enforcing the RSI safety envelope.
 pub struct CanaryRollbackHarness {
     pub verifier: VerifierIdentity,
-    pub signing_key: SigningKey,
-    pub cryptographic_tier: CryptographicTier,
+    pub signer: Arc<dyn VerifierSigner>,
 }
 
 impl CanaryRollbackHarness {
     pub fn new(
         verifier: VerifierIdentity,
-        signing_key: SigningKey,
-        cryptographic_tier: CryptographicTier,
+        signer: Arc<dyn VerifierSigner>,
     ) -> Self {
         Self {
             verifier,
-            signing_key,
-            cryptographic_tier,
+            signer,
         }
     }
 
     /// Executes candidate canary evaluation against the frozen plan.
-    /// If any required evaluator fails or invariant is violated, executes rollback_action and emits a SignedEvaluationReceipt with Verdict::Fail.
-    /// If all requirements pass, emits a SignedEvaluationReceipt with Verdict::Pass.
+    /// Strictly verifies that all required evaluators specified in the plan are present and version-matched.
+    /// If any required evaluator fails, is missing, or violates an invariant, executes rollback_action and emits a SignedEvaluationReceipt with Verdict::Fail.
     pub async fn evaluate_and_enforce<R, Fut>(
         &self,
         plan: &EvaluationPlan,
@@ -424,10 +528,45 @@ impl CanaryRollbackHarness {
         R: FnOnce() -> Fut + Send,
         Fut: Future<Output = Result<(), String>> + Send,
     {
+        // 1. Verify frozen plan integrity
         if !plan.verify_plan_digest() {
             return Err(EvaluationError::PlanDigestMismatch);
         }
 
+        // 2. Validate descriptor coverage between frozen plan and supplied evaluators
+        let mut provided_map: HashMap<String, &Box<dyn Evaluator>> = HashMap::new();
+        for eval in evaluators {
+            let id = eval.descriptor().evaluator_id;
+            if provided_map.contains_key(&id) {
+                return Err(EvaluationError::DuplicateEvaluator(id));
+            }
+            provided_map.insert(id, eval);
+        }
+
+        let plan_ids: HashSet<String> = plan.evaluators.iter().map(|d| d.evaluator_id.clone()).collect();
+        for provided_id in provided_map.keys() {
+            if !plan_ids.contains(provided_id) {
+                return Err(EvaluationError::UnexpectedEvaluator(provided_id.clone()));
+            }
+        }
+
+        // Check that every required plan evaluator is present and version-matched
+        for expected in &plan.evaluators {
+            if let Some(eval) = provided_map.get(&expected.evaluator_id) {
+                let actual_desc = eval.descriptor();
+                if actual_desc.version != expected.version {
+                    return Err(EvaluationError::EvaluatorVersionMismatch {
+                        evaluator_id: expected.evaluator_id.clone(),
+                        expected: expected.version.clone(),
+                        actual: actual_desc.version,
+                    });
+                }
+            } else if expected.required {
+                return Err(EvaluationError::MissingRequiredEvaluator(expected.evaluator_id.clone()));
+            }
+        }
+
+        // 3. Execute evaluation
         let mut outcomes = Vec::new();
         let mut passed_all = true;
         let mut evidence_digests = Vec::new();
@@ -483,7 +622,7 @@ impl CanaryRollbackHarness {
             completed_at,
         };
 
-        let signed = receipt.sign(&self.signing_key, self.cryptographic_tier);
+        let signed = receipt.sign_with_signer(&*self.signer)?;
         Ok((signed, outcomes))
     }
 }

@@ -102,6 +102,7 @@ dependencies = [
  "aien-protocol-types",
  "bitflags",
  "hex",
+ "p256",
  "serde",
  "serde_json",
  "sha2 0.10.9",
