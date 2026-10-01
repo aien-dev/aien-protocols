@@ -1,5 +1,6 @@
 /* trn1_verify.c: reference verifier for the TRN1 execution transcript,
- * wire schema 1, contract 0.1.0. Spec: ../TRN1_TRANSCRIPT_SPEC.md.
+ * contract 0.2.0: wire schema 1 (0.1 registry) and wire schema 3 (0.2
+ * registry, adds types 17, 18, 19, 21). Spec: ../TRN1_TRANSCRIPT_SPEC.md.
  *
  * Self-contained C99: its own SHA-256 (FIPS 180-4), libc only, no imports
  * from any implementation repository. It exists to prove the corpus, not to
@@ -35,7 +36,11 @@ enum {
     CHK_IDENT_LEN, CHK_END_SUBSYS, CHK_BODY_RESERVED, CHK_CAP_OP,
     CHK_CRASH_SEQ, CHK_CRUMB_SHAPE, CHK_CRUMB_DIGEST, CHK_ARGUS_FLAG,
     CHK_ARGUS_LINK, CHK_ARGUS_CONT, CHK_INPUT_DIGEST, CHK_END_ANNOT,
-    CHK_END_COUNT, CHK_TRAILING, CHK_TRUNCATED, CHK_LAST
+    CHK_END_COUNT, CHK_TRAILING, CHK_TRUNCATED,
+    CHK_SCHEMA_GATE, CHK_CAUSE_MODE, CHK_CAUSE_KIND, CHK_CAUSE_LOCAL,
+    CHK_CAUSE_ROOT, CHK_RBIND_FORMAT, CHK_RBIND_RESERVED, CHK_RLINK_REL,
+    CHK_RLINK_RESERVED, CHK_RLINK_FIRST, CHK_RES_OP, CHK_RES_REASON,
+    CHK_RES_FIELD, CHK_RES_RESERVED, CHK_LAST
 };
 
 /* ---- refusal codes (spec section 6) ------------------------------------ */
@@ -132,8 +137,11 @@ static const char *subsys_name(uint16_t s) {
     return s < sizeof n / sizeof n[0] ? n[s] : NULL;
 }
 
-/* Fixed identity length per record type; -1 = variable (rule in code), 0 = unknown type. */
-static long ident_rule(uint16_t t) {
+/* Fixed identity length per record type; -1 = variable (rule in code), 0 = unknown type.
+ * v02 is nonzero when the file declares wire schema 3 (contract 0.2 registry). */
+#define SCHEMA_V01 1u
+#define SCHEMA_V02 3u
+static long ident_rule(uint16_t t, int v02) {
     switch (t) {
     case 1: return 32;   /* SCHED_DECISION */
     case 2: return 24;   /* BRANCH_CREATE */
@@ -151,6 +159,11 @@ static long ident_rule(uint16_t t) {
     case 14: return 40;  /* CHECKPOINT */
     case 15: return -1;  /* RX_CRUMB: 32 + canonical crumb bytes */
     case 16: return 200; /* ARGUS_EVENT */
+    case 17: return v02 ? 80 : 0;   /* CAUSE (0.2) */
+    case 18: return v02 ? 40 : 0;   /* RECEIPT_BIND (0.2) */
+    case 19: return v02 ? 48 : 0;   /* RUN_LINK (0.2) */
+    /* 20 TRAIN_DISPATCH: number reserved, layout not fixed in 0.2.0: unknown. */
+    case 21: return v02 ? 96 : 0;   /* RESOURCE (0.2) */
     case T_END: return 16;
     default: return 0;
     }
@@ -196,7 +209,7 @@ static int refuse(Verdict *v, int code, uint64_t ev) { v->code = code; v->event 
 static int verify(const uint8_t *b, size_t n, Verdict *v) {
     size_t o = 0;
     uint8_t prev[32], argus_after[32];
-    int have_argus = 0;
+    int have_argus = 0, v02 = 0;
     uint64_t seq = 0;
 
     memset(v, 0, sizeof *v);
@@ -208,7 +221,9 @@ static int verify(const uint8_t *b, size_t n, Verdict *v) {
     if (n < 4) return refuse(v, R_LENGTH, 0);
     if (CHECK(CHK_MAGIC) && memcmp(b, "TRN1", 4) != 0) return refuse(v, R_MAGIC, 0);
     if (n < 6) return refuse(v, R_LENGTH, 0);
-    if (CHECK(CHK_VERSION) && g16(b + 4) != 1) return refuse(v, R_VERSION, 0);
+    if (CHECK(CHK_VERSION) && g16(b + 4) != SCHEMA_V01 && g16(b + 4) != SCHEMA_V02) return refuse(v, R_VERSION, 0);
+    /* With the gate disabled (mutant) a schema 1 file also gets the 0.2 types. */
+    v02 = g16(b + 4) == SCHEMA_V02 || !CHECK(CHK_SCHEMA_GATE);
     if (n < HDR_SIZE) return refuse(v, R_LENGTH, 0);
     if (CHECK(CHK_HDR_FLAGS) && g16(b + 6) != 0) return refuse(v, R_NONCANONICAL, 0);
     if (CHECK(CHK_PRODUCER) && (g16(b + 40) == 0 || !subsys_name(g16(b + 40)))) return refuse(v, R_UNKNOWN, 0);
@@ -231,7 +246,7 @@ static int verify(const uint8_t *b, size_t n, Verdict *v) {
         r = b + o;
         type = g16(r); sub = g16(r + 2); ilen = g32(r + 4); alen = g32(r + 8);
         /* 2. known type and subsystem */
-        rule = ident_rule(type);
+        rule = ident_rule(type, v02);
         if (CHECK(CHK_TYPE) && rule == 0) return refuse(v, R_UNKNOWN, pos);
         if (CHECK(CHK_SUBSYS) && !subsys_name(sub)) return refuse(v, R_UNKNOWN, pos);
         /* 3. reserved */
@@ -258,6 +273,24 @@ static int verify(const uint8_t *b, size_t n, Verdict *v) {
         if (CHECK(CHK_CRUMB_SHAPE) && type == 15 && ilen >= 32 && !crumb_shape(id + 32, ilen - 32)) return refuse(v, R_SHAPE, pos);
         if (CHECK(CHK_ARGUS_FLAG) && type == 16 && id[128] > 1) return refuse(v, R_SHAPE, pos);
         if (CHECK(CHK_END_ANNOT) && type == T_END && alen != 0) return refuse(v, R_SHAPE, pos);
+        /* contract 0.2.0 shape rules (section 5.5); types 17..21 only reach
+         * here under schema 3 (or with the schema gate mutant). */
+        if (type == 17) {
+            uint32_t mode = g32(id + 32), kind = g32(id + 36);
+            if (CHECK(CHK_CAUSE_MODE) && (mode < 1 || mode > 3)) return refuse(v, R_SHAPE, pos);
+            if (CHECK(CHK_CAUSE_KIND) && (mode == 3 ? kind > 4 : (kind < 1 || kind > 4))) return refuse(v, R_SHAPE, pos);
+            if (CHECK(CHK_CAUSE_LOCAL) && mode != 3 && g64(id + 40) == 0) return refuse(v, R_SHAPE, pos);
+        }
+        if (CHECK(CHK_RBIND_FORMAT) && type == 18 && (g32(id + 32) < 1 || g32(id + 32) > 3)) return refuse(v, R_SHAPE, pos);
+        if (CHECK(CHK_RLINK_REL) && type == 19 && g32(id) != 1) return refuse(v, R_SHAPE, pos);
+        if (CHECK(CHK_RLINK_FIRST) && type == 19 && pos != 1) return refuse(v, R_SHAPE, pos);
+        if (type == 21) {
+            uint8_t op = id[0], why = id[1];
+            if (CHECK(CHK_RES_OP) && (op < 1 || op > 6)) return refuse(v, R_SHAPE, pos);
+            if (CHECK(CHK_RES_REASON) && (op == 3 ? (why < 1 || why > 4) : op == 4 ? (why < 1 || why > 3) : why != 0))
+                return refuse(v, R_SHAPE, pos);
+            if (CHECK(CHK_RES_FIELD) && g16(id + 2) > 10) return refuse(v, R_SHAPE, pos);
+        }
         if (CHECK(CHK_BODY_RESERVED)) {
             int bad = 0;
             switch (type) {
@@ -273,6 +306,11 @@ static int verify(const uint8_t *b, size_t n, Verdict *v) {
             }
             if (bad) return refuse(v, R_NONCANONICAL, pos);
         }
+        /* contract 0.2.0 reserved and must-be-zero fields (section 5.5) */
+        if (CHECK(CHK_CAUSE_ROOT) && type == 17 && g32(id + 32) != 1 && !all_zero(id + 48, 32)) return refuse(v, R_NONCANONICAL, pos);
+        if (CHECK(CHK_RBIND_RESERVED) && type == 18 && g32(id + 36) != 0) return refuse(v, R_NONCANONICAL, pos);
+        if (CHECK(CHK_RLINK_RESERVED) && type == 19 && g32(id + 4) != 0) return refuse(v, R_NONCANONICAL, pos);
+        if (CHECK(CHK_RES_RESERVED) && type == 21 && g32(id + 4) != 0) return refuse(v, R_NONCANONICAL, pos);
         if (type == 15 && ilen >= 32) {
             uint8_t d[32];
             sha2("AIEN_RX_CAUSAL_V1", 17, id + 32, ilen - 32, d);

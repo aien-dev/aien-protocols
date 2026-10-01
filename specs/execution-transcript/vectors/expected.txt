@@ -70,3 +70,39 @@ m062.trn refuse -9 event=1
 m063.trn refuse -9 event=2
 m064.trn refuse -9 event=1
 m065.trn refuse -9 event=2
+# Contract 0.2.0 (wire schema 3) vectors: causal and resource records, types 17 to 21.
+g006.trn ok records=10 run=c6140e706e62613e2e7b30568f6b925f46627420591ade3d8957eddfc7eb8a14 final=af8d2ef413f65add9657b8f91b2378e24e88a956270f671983b113d826d21a6d
+g008.trn ok records=10 run=e76ee8f2c37ddfa70d46a906a04293b682f89b77342389a5152825125f2b15f7 final=d5e64eb5f276ef2b486c8dcbdd725f9756c7377c3b78dd9c02a5f5e896c3f643
+g007.trn ok records=4 run=084d0375dcced6a8368c13d63ed5801421d36e7825c42de143bced8da5f2686d final=87e9b9a9b813824cf4628c05bbf2c5fee57763a077f13f8000edcc9018ab2fc2
+p003.trn ok records=7 run=231d8705a1d95780e983fd67059142fc896bd8a666b52e05425399b7b94f4c85 final=cf841d4f1e555afdbf4d372322a1a1541ceceab5f62b944d5403ec25ff0c4a6f
+f007.trn ok records=3 run=c6140e706e62613e2e7b30568f6b925f46627420591ade3d8957eddfc7eb8a14 final=5a3fee5e3a42e09b16863a757a6f49a53b74e495621cc863d7b45bde809ef3f1
+f008.trn ok records=3 run=c6140e706e62613e2e7b30568f6b925f46627420591ade3d8957eddfc7eb8a14 final=3bac8f545e401c96ac0c0c7d9b248365fd023b097f02beac79cf85777cdeabe2
+f009.trn ok records=4 run=c6140e706e62613e2e7b30568f6b925f46627420591ade3d8957eddfc7eb8a14 final=32bdaa3df54253edf9632e79db59de062abdfd221d2917f320793986a49050d4
+j001.trn ok records=3 run=4339abf3a317ce51a3f121e988765b61d757f6a6fc9cf8e068cb13695af4c167 final=a27e28641f95294a3370953079fc3edf7e3863f3df253b90c2d2cefaded75cc8
+j002.trn ok records=5 run=5efad6350e730837f6b15c5379125e0de82a1550001ab7a773df9a341ed3f703 final=05ac109dae7089de4c558eba12e973dc745679285a6a9db5c8af7a8abb93ab05
+j003.trn ok records=3 run=95f1d7ae4665165c8a530972e8b62b8dfd30f02bcb9600e46884fb663a998411 final=06f6b49beb589c1312e6f9873df797557ca1812f41a8e6298f3d8461cde2d3f2
+j004.trn ok records=4 run=58811e096e63b93b802bc5d6ba15ea85224f5cd978215df4dfa255f8eb95344a final=88da5921df2cc9eed5b8c2f3100599b556d3eea7309c5adf51bc831f35aa4526
+j005.trn ok records=4 run=c79cc3e30de831e7c65dd5d20523c093ed56d010e3f7caa3b65812ae2878f89f final=d3f2211693f14fa66c94569c0aa390c4a77c648f4598e5cdee8c03d133121d63
+m070.trn refuse -5 event=1
+m071.trn refuse -5 event=1
+m072.trn refuse -6 event=1
+m073.trn refuse -6 event=1
+m074.trn refuse -6 event=1
+m075.trn refuse -6 event=1
+m076.trn refuse -6 event=1
+m077.trn refuse -6 event=1
+m078.trn refuse -4 event=1
+m079.trn refuse -4 event=1
+m080.trn refuse -6 event=1
+m081.trn refuse -4 event=1
+m082.trn refuse -6 event=1
+m083.trn refuse -4 event=1
+m084.trn refuse -6 event=2
+m085.trn refuse -6 event=1
+m086.trn refuse -6 event=1
+m087.trn refuse -6 event=1
+m088.trn refuse -6 event=1
+m089.trn refuse -4 event=1
+m090.trn refuse -6 event=1
+m091.trn refuse -8 event=3
+m092.trn refuse -7 event=1
