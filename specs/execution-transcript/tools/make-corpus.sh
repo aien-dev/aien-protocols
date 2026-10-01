@@ -521,8 +521,9 @@ start $SUB_RUNTIME "$RUN6" $V2
 rec 21 $SUB_RUNTIME "$(resource 1 0 0 1 "$CA" "$CON6" 0 0)" ""
 rec 17 $SUB_RUNTIME "$(cause_rec "$CA" $MINT 3 1 "$ROOT6")" ""
 end; save f008.trn; ok f008.trn 3 "$RUN6"; div6 f008.trn 1 sovcore-runtime
-# (f008 join code not listed: CAUSE_PLACEMENT (step 4) or REF_UNKNOWN (step 7)
-#  depends on an open spec question, see the HD-08 S1 report.)
+# The MINT comes after a record that names its cause: CAUSE_PLACEMENT at the
+# MINT (step 4 runs before step 7; aien-architecture#102 Q7).
+jrefuse f008.trn CAUSE_PLACEMENT "$RUN6" 2
 # f009 omission: g006 without its CAUSE MINT, renumbered, rechained.
 start $SUB_RUNTIME "$RUN6" $V2
 rec 21 $SUB_RUNTIME "$(resource 1 0 0 1 "$CA" "$CON6" 0 0)" ""
@@ -580,4 +581,7 @@ g006 "$RUN6" "$(dig "receipt g006")" >/dev/null; end   # refresh OFF/LEN for g00
 mb "$(flip "$G6" $(($(R 2) + 56 + 16)))" m091.trn; refuse m091.trn -8 3
 # m092 reorder: records 1 (MINT) and 2 (charge) swapped.
 mb "${G6:0:$(($(R 1) * 2))}$(cut_hex "$G6" "$(R 2)" "${LEN[2]}")$(cut_hex "$G6" "$(R 1)" "${LEN[1]}")${G6:$(($(R 3) * 2))}" m092.trn; refuse m092.trn -7 1
+# CAUSE REF carries local_kind 0 and local 0 exactly (aien-architecture#102 Q3).
+V "" m093; rec 17 $SUB_RUNTIME "$(cause_rec "$CA" $CREF 3 0 "$Z32")" ""; end; save m093.trn; refuse m093.trn -6 1   # REF local_kind 3
+V "" m094; rec 17 $SUB_RUNTIME "$(cause_rec "$CA" $CREF 0 5 "$Z32")" ""; end; save m094.trn; refuse m094.trn -6 1   # REF local 5
 echo "corpus written to $OUT: $(ls "$OUT"/*.trn | wc -l) transcripts"

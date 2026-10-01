@@ -221,6 +221,8 @@ a file whose header schema is 3; under schema 1 they are UNKNOWN.
 
 **Cause id.** A 32-byte value,
 `SHA-256("AIEN_CAUSE_V0" (13 ASCII bytes) || subsystem u16 || local_kind u32 || local u64 || root digest)`,
+where `subsystem` is the CAUSE record's own subsystem field, not the file
+header producer (aien-architecture#102 Q5),
 minted once where an outside input enters AIEN and copied, never re-minted,
 downstream (causal-id-join section 2.1 and 2.3). A TRN1 verifier carries it;
 it does not recompute it (see "Verifier rules versus join rules" below).
@@ -231,8 +233,8 @@ it does not recompute it (see "Verifier rules versus join rules" below).
 |---|---|---|---|
 | 0 | 32 | cause | the cause id |
 | 32 | 4 | mode | 1 MINT, 2 ADOPT, 3 REF; else SHAPE |
-| 36 | 4 | local_kind | 1 omega episode, 2 aienos admission, 3 sovcore request, 4 train run (causal-id-join table 2.2 and section 3.4). MINT and ADOPT: 1 to 4, else SHAPE. REF: 0 to 4, else SHAPE |
-| 40 | 8 | local | MINT and ADOPT: not 0, else SHAPE. REF: any |
+| 36 | 4 | local_kind | 1 omega episode, 2 aienos admission, 3 sovcore request, 4 train run (causal-id-join table 2.2 and section 3.4). MINT and ADOPT: 1 to 4, else SHAPE. REF: 0 exactly, else SHAPE (aien-architecture#102 Q3) |
+| 40 | 8 | local | MINT and ADOPT: not 0, else SHAPE. REF: 0 exactly, else SHAPE (aien-architecture#102 Q3) |
 | 48 | 32 | root digest | MINT: the digest the cause was minted over. ADOPT and REF: all zero, else NONCANONICAL |
 
 Annotation (never compared, not checked by the verifier): an ADOPT carries
@@ -341,7 +343,8 @@ Then for record k = 1, 2, ...:
 8. Shape, in this order: ident_len rule for the type; END-and-only-END has
    subsystem 0; CAP_TRANSITION op; CRASH_BOUNDARY last_durable_seq < k;
    RX_CRUMB canonical bytes; ARGUS_EVENT chained flag; END annot_len 0;
-   then (schema 3) CAUSE mode, CAUSE local_kind, CAUSE local, RECEIPT_BIND
+   then (schema 3) CAUSE mode, CAUSE local_kind (MINT and ADOPT),
+   REF local_kind zero, CAUSE local (MINT and ADOPT), REF local zero, RECEIPT_BIND
    format, RUN_LINK relation, RUN_LINK is record 1, RESOURCE op, RESOURCE
    reason, RESOURCE field. Any failure: SHAPE.
 9. Reserved fields inside the identity, then (schema 3) CAUSE root digest
@@ -411,8 +414,8 @@ Omega harnesses can read them without a JSON parser.
 | 0.2 golden | `g006` .. `g008` | schema 3. g006 one sovcore request start to receipt: CAUSE MINT, RESOURCE charge, CAUSE REF before a branch and before an effect, refund, RECEIPT_BIND; g007 a child run (RUN_LINK as record 1 naming g006's BRANCH_CREATE, CAUSE ADOPT, RESOURCE cancel); g008 a replay of g006 with another run id and receipt digest, which MATCHes g006 |
 | 0.2 edge positive | `p003` | top of each range: local_kind 4, REFUSE reason 4, CANCEL reason 3, OVERRUN, OVER_OBSERVED on field 10, receipt format 1 |
 | 0.2 forged | `f007` .. `f009` | rechained: cause bit flip in a RESOURCE, RESOURCE before its MINT (reorder), MINT omitted before the RESOURCE. Each verifies and DIVERGEs from g006 |
-| Join only | `j001` .. `j005` | verify under TRN1; `join.txt` names the join refusal: CAUSE_DIGEST, DOUBLE_MINT, REF_MISSING, COMMIT_ORPHAN, RECEIPT_CAUSE (f007 and f009 are listed there too, REF_UNKNOWN) |
-| 0.2 refusals | `m070` .. `m092` | a valid 0.2 record under a schema 1 header (UNKNOWN); type 20 (UNKNOWN); wrong lengths (CAUSE 79 bytes, RESOURCE with the old 8-byte cause); every 0.2 SHAPE and NONCANONICAL rule; a check-order case; byte damage on g006 (cause bit flip, reorder) |
+| Join only | `j001` .. `j005` | verify under TRN1; `join.txt` names the join refusal: CAUSE_DIGEST, DOUBLE_MINT, REF_MISSING, COMMIT_ORPHAN, RECEIPT_CAUSE (f007 and f009 are listed there too, REF_UNKNOWN; f008 is CAUSE_PLACEMENT at its late MINT, aien-architecture#102 Q7) |
+| 0.2 refusals | `m070` .. `m094` | a valid 0.2 record under a schema 1 header (UNKNOWN); type 20 (UNKNOWN); wrong lengths (CAUSE 79 bytes, RESOURCE with the old 8-byte cause); every 0.2 SHAPE and NONCANONICAL rule; a check-order case; byte damage on g006 (cause bit flip, reorder); a CAUSE REF with nonzero local_kind (m093) and nonzero local (m094) |
 
 Regenerate with `tools/make-corpus.sh vectors`. The generator is shell plus
 coreutils (`sha256sum`, `od`, `sed`) and builds every byte from the tables

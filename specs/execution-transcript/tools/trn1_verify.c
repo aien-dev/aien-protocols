@@ -40,7 +40,7 @@ enum {
     CHK_SCHEMA_GATE, CHK_CAUSE_MODE, CHK_CAUSE_KIND, CHK_CAUSE_LOCAL,
     CHK_CAUSE_ROOT, CHK_RBIND_FORMAT, CHK_RBIND_RESERVED, CHK_RLINK_REL,
     CHK_RLINK_RESERVED, CHK_RLINK_FIRST, CHK_RES_OP, CHK_RES_REASON,
-    CHK_RES_FIELD, CHK_RES_RESERVED, CHK_LAST
+    CHK_RES_FIELD, CHK_RES_RESERVED, CHK_REF_KIND, CHK_REF_LOCAL, CHK_LAST
 };
 
 /* ---- refusal codes (spec section 6) ------------------------------------ */
@@ -278,8 +278,11 @@ static int verify(const uint8_t *b, size_t n, Verdict *v) {
         if (type == 17) {
             uint32_t mode = g32(id + 32), kind = g32(id + 36);
             if (CHECK(CHK_CAUSE_MODE) && (mode < 1 || mode > 3)) return refuse(v, R_SHAPE, pos);
-            if (CHECK(CHK_CAUSE_KIND) && (mode == 3 ? kind > 4 : (kind < 1 || kind > 4))) return refuse(v, R_SHAPE, pos);
+            if (CHECK(CHK_CAUSE_KIND) && mode != 3 && (kind < 1 || kind > 4)) return refuse(v, R_SHAPE, pos);
+            /* REF: local_kind and local are 0 exactly (arch#102 Q3). */
+            if (CHECK(CHK_REF_KIND) && mode == 3 && kind != 0) return refuse(v, R_SHAPE, pos);
             if (CHECK(CHK_CAUSE_LOCAL) && mode != 3 && g64(id + 40) == 0) return refuse(v, R_SHAPE, pos);
+            if (CHECK(CHK_REF_LOCAL) && mode == 3 && g64(id + 40) != 0) return refuse(v, R_SHAPE, pos);
         }
         if (CHECK(CHK_RBIND_FORMAT) && type == 18 && (g32(id + 32) < 1 || g32(id + 32) > 3)) return refuse(v, R_SHAPE, pos);
         if (CHECK(CHK_RLINK_REL) && type == 19 && g32(id) != 1) return refuse(v, R_SHAPE, pos);

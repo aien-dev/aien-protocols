@@ -106,3 +106,5 @@ m089.trn refuse -4 event=1
 m090.trn refuse -6 event=1
 m091.trn refuse -8 event=3
 m092.trn refuse -7 event=1
+m093.trn refuse -6 event=1
+m094.trn refuse -6 event=1
