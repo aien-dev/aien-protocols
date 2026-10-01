@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "name": "crates/aien-probe/tests",
+  "layer": "crates/aien-probe/tests",
+  "purpose": "Directory crates/aien-probe/tests. Purpose not yet described by a human.",
+  "above": {
+    "name": "crates/aien-probe",
+    "path": ".."
+  },
+  "extensions": {
+    "seed": {
+      "purpose_auto": "Directory crates/aien-probe/tests. Purpose not yet described by a human.",
+      "files": [
+        "probe_engine_tests.rs"
+      ]
+    },
+    "owner_lane": ""
+  }
+}

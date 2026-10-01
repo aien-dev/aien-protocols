@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0.0",
+  "name": "aien-protocols",
+  "layer": "root",
+  "purpose": "Repository root aien-protocols. Purpose not yet described by a human.",
+  "below": [
+    {
+      "name": "crates",
+      "role": ""
+    },
+    {
+      "name": "specs",
+      "role": ""
+    }
+  ],
+  "extensions": {
+    "seed": {
+      "purpose_auto": "Repository root aien-protocols. Purpose not yet described by a human.",
+      "files": [
+        "ANTI_ENCLOSURE.md",
+        "CHANGELOG.md",
+        "CONSUMERS.md",
+        "Cargo.lock",
+        "Cargo.toml",
+        "GOVERNANCE.md",
+        "LICENSE-CODE",
+        "LICENSE-SPEC",
+        "NOTICES.md",
+        "README.md",
+        "SCOPE.md",
+        "TRADEMARKS.md",
+        "VERSIONING.md"
+      ],
+      "git": {
+        "remote": "git@github.com:aien-dev/aien-protocols.git",
+        "branch": "hardening/LB-trn1-transcript",
+        "head": "1c70ac4"
+      }
+    },
+    "owner_lane": ""
+  }
+}

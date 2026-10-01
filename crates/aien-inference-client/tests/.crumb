@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "name": "crates/aien-inference-client/tests",
+  "layer": "crates/aien-inference-client/tests",
+  "purpose": "Directory crates/aien-inference-client/tests. Purpose not yet described by a human.",
+  "above": {
+    "name": "crates/aien-inference-client",
+    "path": ".."
+  },
+  "extensions": {
+    "seed": {
+      "purpose_auto": "Directory crates/aien-inference-client/tests. Purpose not yet described by a human.",
+      "files": [
+        "http_client_tests.rs"
+      ]
+    },
+    "owner_lane": ""
+  }
+}

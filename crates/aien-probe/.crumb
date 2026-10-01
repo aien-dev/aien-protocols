@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0.0",
+  "name": "crates/aien-probe",
+  "layer": "crates/aien-probe",
+  "purpose": "Directory crates/aien-probe. Purpose not yet described by a human.",
+  "above": {
+    "name": "crates",
+    "path": ".."
+  },
+  "below": [
+    {
+      "name": "src",
+      "role": ""
+    },
+    {
+      "name": "tests",
+      "role": ""
+    }
+  ],
+  "extensions": {
+    "seed": {
+      "purpose_auto": "Directory crates/aien-probe. Purpose not yet described by a human.",
+      "files": [
+        "Cargo.toml",
+        "README.md"
+      ]
+    },
+    "owner_lane": ""
+  }
+}

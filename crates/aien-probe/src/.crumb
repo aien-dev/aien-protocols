@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "name": "crates/aien-probe/src",
+  "layer": "crates/aien-probe/src",
+  "purpose": "Directory crates/aien-probe/src. Purpose not yet described by a human.",
+  "above": {
+    "name": "crates/aien-probe",
+    "path": ".."
+  },
+  "extensions": {
+    "seed": {
+      "purpose_auto": "Directory crates/aien-probe/src. Purpose not yet described by a human.",
+      "files": [
+        "backend.rs",
+        "evaluator.rs",
+        "lib.rs",
+        "math.rs"
+      ]
+    },
+    "owner_lane": ""
+  }
+}

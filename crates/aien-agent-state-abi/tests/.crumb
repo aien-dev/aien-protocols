@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "name": "crates/aien-agent-state-abi/tests",
+  "layer": "crates/aien-agent-state-abi/tests",
+  "purpose": "Directory crates/aien-agent-state-abi/tests. Purpose not yet described by a human.",
+  "above": {
+    "name": "crates/aien-agent-state-abi",
+    "path": ".."
+  },
+  "extensions": {
+    "seed": {
+      "purpose_auto": "Directory crates/aien-agent-state-abi/tests. Purpose not yet described by a human.",
+      "files": [
+        "integration_tests.rs"
+      ]
+    },
+    "owner_lane": ""
+  }
+}

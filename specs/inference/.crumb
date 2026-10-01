@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "name": "specs/inference",
+  "layer": "specs/inference",
+  "purpose": "Directory specs/inference. Purpose not yet described by a human.",
+  "above": {
+    "name": "specs",
+    "path": ".."
+  },
+  "extensions": {
+    "seed": {
+      "purpose_auto": "Directory specs/inference. Purpose not yet described by a human.",
+      "files": [
+        "SPEC.md"
+      ]
+    },
+    "owner_lane": ""
+  }
+}
