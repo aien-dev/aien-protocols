@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "name": "specs/agent-state",
+  "layer": "specs/agent-state",
+  "purpose": "Directory specs/agent-state. Purpose not yet described by a human.",
+  "above": {
+    "name": "specs",
+    "path": ".."
+  },
+  "extensions": {
+    "seed": {
+      "purpose_auto": "Directory specs/agent-state. Purpose not yet described by a human.",
+      "files": [
+        "SPEC.md"
+      ]
+    },
+    "owner_lane": ""
+  }
+}

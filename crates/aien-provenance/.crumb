@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "name": "crates/aien-provenance",
+  "layer": "crates/aien-provenance",
+  "purpose": "Directory crates/aien-provenance. Purpose not yet described by a human.",
+  "above": {
+    "name": "crates",
+    "path": ".."
+  },
+  "below": [
+    {
+      "name": "src",
+      "role": ""
+    }
+  ],
+  "extensions": {
+    "seed": {
+      "purpose_auto": "Directory crates/aien-provenance. Purpose not yet described by a human.",
+      "files": [
+        "Cargo.toml"
+      ]
+    },
+    "owner_lane": ""
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0.0",
+  "name": "crates",
+  "layer": "crates",
+  "purpose": "Directory crates. Purpose not yet described by a human.",
+  "above": {
+    "name": "aien-protocols",
+    "path": ".."
+  },
+  "below": [
+    {
+      "name": "aien-action-protocol",
+      "role": ""
+    },
+    {
+      "name": "aien-agent-state-abi",
+      "role": ""
+    },
+    {
+      "name": "aien-evaluation-protocol",
+      "role": ""
+    },
+    {
+      "name": "aien-event-protocol",
+      "role": ""
+    },
+    {
+      "name": "aien-inference-client",
+      "role": ""
+    },
+    {
+      "name": "aien-inference-protocol",
+      "role": ""
+    },
+    {
+      "name": "aien-probe",
+      "role": ""
+    },
+    {
+      "name": "aien-protocol-types",
+      "role": ""
+    },
+    {
+      "name": "aien-provenance",
+      "role": ""
+    }
+  ],
+  "extensions": {
+    "seed": {
+      "purpose_auto": "Directory crates. Purpose not yet described by a human.",
+      "files": []
+    },
+    "owner_lane": ""
+  }
+}

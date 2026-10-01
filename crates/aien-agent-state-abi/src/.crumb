@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "name": "crates/aien-agent-state-abi/src",
+  "layer": "crates/aien-agent-state-abi/src",
+  "purpose": "Directory crates/aien-agent-state-abi/src. Purpose not yet described by a human.",
+  "above": {
+    "name": "crates/aien-agent-state-abi",
+    "path": ".."
+  },
+  "extensions": {
+    "seed": {
+      "purpose_auto": "Directory crates/aien-agent-state-abi/src. Purpose not yet described by a human.",
+      "files": [
+        "lib.rs"
+      ]
+    },
+    "owner_lane": ""
+  }
+}

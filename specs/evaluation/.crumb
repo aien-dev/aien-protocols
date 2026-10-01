@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "name": "specs/evaluation",
+  "layer": "specs/evaluation",
+  "purpose": "Directory specs/evaluation. Purpose not yet described by a human.",
+  "above": {
+    "name": "specs",
+    "path": ".."
+  },
+  "extensions": {
+    "seed": {
+      "purpose_auto": "Directory specs/evaluation. Purpose not yet described by a human.",
+      "files": [
+        "SPEC.md"
+      ]
+    },
+    "owner_lane": ""
+  }
+}

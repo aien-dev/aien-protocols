@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "name": "crates/aien-provenance/src",
+  "layer": "crates/aien-provenance/src",
+  "purpose": "Directory crates/aien-provenance/src. Purpose not yet described by a human.",
+  "above": {
+    "name": "crates/aien-provenance",
+    "path": ".."
+  },
+  "extensions": {
+    "seed": {
+      "purpose_auto": "Directory crates/aien-provenance/src. Purpose not yet described by a human.",
+      "files": [
+        "lib.rs"
+      ]
+    },
+    "owner_lane": ""
+  }
+}

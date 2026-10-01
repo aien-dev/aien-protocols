@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0.0",
+  "name": "crates/aien-evaluation-protocol/tests",
+  "layer": "crates/aien-evaluation-protocol/tests",
+  "purpose": "Directory crates/aien-evaluation-protocol/tests. Purpose not yet described by a human.",
+  "above": {
+    "name": "crates/aien-evaluation-protocol",
+    "path": ".."
+  },
+  "extensions": {
+    "seed": {
+      "purpose_auto": "Directory crates/aien-evaluation-protocol/tests. Purpose not yet described by a human.",
+      "files": [
+        "evaluator_protocol_tests.rs"
+      ]
+    },
+    "owner_lane": ""
+  }
+}

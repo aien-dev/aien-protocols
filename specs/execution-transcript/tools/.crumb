@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "name": "specs/execution-transcript/tools",
+  "layer": "specs/execution-transcript/tools",
+  "purpose": "Directory specs/execution-transcript/tools. Purpose not yet described by a human.",
+  "above": {
+    "name": "specs/execution-transcript",
+    "path": ".."
+  },
+  "extensions": {
+    "seed": {
+      "purpose_auto": "Directory specs/execution-transcript/tools. Purpose not yet described by a human.",
+      "files": [
+        "check-corpus.sh",
+        "make-corpus.sh",
+        "mutate-verifier.sh",
+        "trn1_verify.c"
+      ]
+    },
+    "owner_lane": ""
+  }
+}

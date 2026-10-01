@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0.0",
+  "name": "specs",
+  "layer": "specs",
+  "purpose": "Directory specs. Purpose not yet described by a human.",
+  "above": {
+    "name": "aien-protocols",
+    "path": ".."
+  },
+  "below": [
+    {
+      "name": "agent-state",
+      "role": ""
+    },
+    {
+      "name": "crumb-visible",
+      "role": ""
+    },
+    {
+      "name": "evaluation",
+      "role": ""
+    },
+    {
+      "name": "execution-transcript",
+      "role": ""
+    },
+    {
+      "name": "inference",
+      "role": ""
+    }
+  ],
+  "extensions": {
+    "seed": {
+      "purpose_auto": "Directory specs. Purpose not yet described by a human.",
+      "files": []
+    },
+    "owner_lane": ""
+  }
+}
