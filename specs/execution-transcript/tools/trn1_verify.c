@@ -218,7 +218,7 @@ static int verify(const uint8_t *b, size_t n, Verdict *v) {
     o = HDR_SIZE;
 
     for (;;) {
-        const uint8_t *r, *id, *an;
+        const uint8_t *r, *id;
         uint16_t type, sub;
         uint32_t ilen, alen;
         long rule;
@@ -244,7 +244,7 @@ static int verify(const uint8_t *b, size_t n, Verdict *v) {
         if (CHECK(CHK_PREV) && memcmp(r + 24, prev, 32) != 0) return refuse(v, R_CHAIN, pos);
         /* 7. body present */
         if ((uint64_t)(n - o - REC_HDR_SIZE) < (uint64_t)ilen + alen) return refuse(v, R_LENGTH, pos);
-        id = r + REC_HDR_SIZE; an = id + ilen;
+        id = r + REC_HDR_SIZE;
 
         /* 8. shape, then reserved fields, then embedded digests */
         if (CHECK(CHK_IDENT_LEN)) {
