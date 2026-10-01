@@ -1,8 +1,9 @@
 # Execution Transcript: TRN1
 
-**Status**: Draft v0 (hardening lane LB, 2026-10-01). Not yet produced by any runtime.
-**Contract version**: 0.1.0 (major zero: may change by minor bump, see VERSIONING.md)
-**Wire schema version**: 1 (the `schema` field below)
+**Status**: Draft v0 (hardening lane LB, 2026-10-01); 0.2.0 adds the causal and resource records (hardening cut S1, lane HD-08, 2026-10-01). Not yet produced by any runtime.
+**Contract version**: 0.2.0 (major zero: may change by minor bump, see VERSIONING.md)
+**Wire schema versions**: 1 (contract 0.1 record registry) and 3 (contract 0.2 record registry), in the `schema` field below; rule in section 10
+**0.2.0 sources**: aien-architecture `docs/hardening/causal-id-join-v0.md` (merged `fa46a26`: sections 2.1, 3.1 to 3.3, 3.5, 4) and `docs/hardening/resource-contract-v0.md` (merged `ddc17b7`: section 4)
 **License**: Community Specification License 1.0
 **Reference verifier**: [`tools/trn1_verify.c`](tools/trn1_verify.c), C99, self-contained (own SHA-256, libc only)
 **Planned implementations**: omega `tools/replay` (C verifier and replayer, lane LD); sovereign-core `crates/aien-replay` (Rust reader, lane LE)
@@ -53,7 +54,7 @@ complement). Offsets are from the start of the buffer.
 | Offset | Size | Field | Valid values |
 |---|---|---|---|
 | 0 | 4 | magic | ASCII `TRN1` (`54 52 4E 31`) |
-| 4 | 2 | schema | `1` |
+| 4 | 2 | schema | `1` or `3` (section 10); every other value is refused |
 | 6 | 2 | flags | `0` (no flags defined) |
 | 8 | 32 | run_id | opaque; the root causal id of this run (plan item P5). Any value. |
 | 40 | 2 | producer | subsystem id (section 5.2) of the writer; not 0 |
@@ -126,7 +127,15 @@ Fields named `reserved` must be zero (NONCANONICAL otherwise).
 | 14 | CHECKPOINT | 40 | scope u32, reserved u32, subsystem state digest |
 | 15 | RX_CRUMB | 32 + n | crumb digest, then the canonical crumb bytes (section 5.3) |
 | 16 | ARGUS_EVENT | 200 | event[128], chained u8 (0 or 1, SHAPE otherwise), reserved[7], chain_before digest, chain_after digest (section 5.4) |
+| 17 | CAUSE | 80 | schema 3 only: cause[32], mode u32, local_kind u32, local u64, root digest (section 5.5) |
+| 18 | RECEIPT_BIND | 40 | schema 3 only: cause[32], format u32, reserved u32 (section 5.5) |
+| 19 | RUN_LINK | 48 | schema 3 only: relation u32, reserved u32, parent branch u64, parent create digest (section 5.5) |
+| 20 | TRAIN_DISPATCH | none | number reserved; no layout in 0.2.0, so refused as UNKNOWN under every schema (section 5.5) |
+| 21 | RESOURCE | 96 | schema 3 only: op u8, reason u8, field u16, reserved u32, unit u64, cause[32], contract digest, declared u64, used u64 (section 5.5) |
 | 0xFFFF | END | 16 | record_count u64 (must equal this record's seq, GAP otherwise), reserved u64 |
+
+Under schema 1 the registry is types 1 to 16 and END; types 17 to 21 are
+unknown there and refused with UNKNOWN (vectors `m030`, `m070`).
 
 ### 5.2 Subsystems
 
@@ -201,6 +210,95 @@ aienos main `33927b1`.
 The ARGUS `tick` field is the authority's logical clock, not a wall clock,
 and stays in the identity.
 
+### 5.5 Causal and resource records (contract 0.2.0, schema 3 only)
+
+Source of truth: aien-architecture `docs/hardening/causal-id-join-v0.md`
+(merged `fa46a26`) sections 2.1, 3.1 to 3.3 and 3.5 (the joint number
+table), and `docs/hardening/resource-contract-v0.md` (merged `ddc17b7`)
+section 4, with the 32-byte cause required by causal-id-join section 3.5.
+All integers little-endian; "digest" is 32 bytes. These types exist only in
+a file whose header schema is 3; under schema 1 they are UNKNOWN.
+
+**Cause id.** A 32-byte value,
+`SHA-256("AIEN_CAUSE_V0" (13 ASCII bytes) || subsystem u16 || local_kind u32 || local u64 || root digest)`,
+where `subsystem` is the CAUSE record's own subsystem field, not the file
+header producer (aien-architecture#102 Q5),
+minted once where an outside input enters AIEN and copied, never re-minted,
+downstream (causal-id-join section 2.1 and 2.3). A TRN1 verifier carries it;
+it does not recompute it (see "Verifier rules versus join rules" below).
+
+**Type 17 CAUSE (80 bytes).**
+
+| Offset | Size | Field | Rule |
+|---|---|---|---|
+| 0 | 32 | cause | the cause id |
+| 32 | 4 | mode | 1 MINT, 2 ADOPT, 3 REF; else SHAPE |
+| 36 | 4 | local_kind | 1 omega episode, 2 aienos admission, 3 sovcore request, 4 train run (causal-id-join table 2.2 and section 3.4). MINT and ADOPT: 1 to 4, else SHAPE. REF: 0 exactly, else SHAPE (aien-architecture#102 Q3) |
+| 40 | 8 | local | MINT and ADOPT: not 0, else SHAPE. REF: 0 exactly, else SHAPE (aien-architecture#102 Q3) |
+| 48 | 32 | root digest | MINT: the digest the cause was minted over. ADOPT and REF: all zero, else NONCANONICAL |
+
+Annotation (never compared, not checked by the verifier): an ADOPT carries
+origin run id (32) then origin seq (u64).
+
+**Type 18 RECEIPT_BIND (40 bytes).**
+
+| Offset | Size | Field | Rule |
+|---|---|---|---|
+| 0 | 32 | cause | a cause opened earlier in this run (a join rule, below) |
+| 32 | 4 | format | 1 aienos `cka_receipt`, 2 omega evidence receipt, 3 sovereign-core `aien-proof`; else SHAPE |
+| 36 | 4 | reserved | zero, else NONCANONICAL |
+
+Annotation: the receipt digest (32). It is chained but never compared,
+because receipt bytes may differ between correct runs (vector `g008`
+MATCHes `g006` with a different receipt digest).
+
+**Type 19 RUN_LINK (48 bytes).** Allowed only as record 1 (SHAPE otherwise).
+
+| Offset | Size | Field | Rule |
+|---|---|---|---|
+| 0 | 4 | relation | 1 CHILD_OF; else SHAPE |
+| 4 | 4 | reserved | zero, else NONCANONICAL |
+| 8 | 8 | parent branch | the `branch` of the parent's `BRANCH_CREATE` |
+| 16 | 32 | parent create digest | the compared digest (section 4.2) of that `BRANCH_CREATE` record |
+
+Annotation: parent run id (32) then parent seq (u64).
+
+**Type 20 TRAIN_DISPATCH.** The number is reserved by the joint table
+(causal-id-join section 3.5). Its identity layout is not fixed in 0.2.0, so
+every reader refuses type 20 as UNKNOWN (vector `m071`). A later minor
+version defines it.
+
+**Type 21 RESOURCE (96 bytes).**
+
+| Offset | Size | Field | Rule |
+|---|---|---|---|
+| 0 | 1 | op | 1 CHARGE, 2 REFUND, 3 REFUSE, 4 CANCEL, 5 OVERRUN, 6 OVER_OBSERVED; else SHAPE |
+| 1 | 1 | reason | REFUSE: 1 BUSY, 2 OVER_BUDGET, 3 UNKNOWN, 4 QUOTA. CANCEL: 1 DEADLINE, 2 PARENT, 3 EXPLICIT. Every other op: 0. Else SHAPE |
+| 2 | 2 | field | contract field number 1 to 10 (resource-contract section 1.2), or 0 for a whole-need charge or refund; above 10 SHAPE |
+| 4 | 4 | reserved | zero, else NONCANONICAL |
+| 8 | 8 | unit | the reaction or task id the outcome applies to |
+| 16 | 32 | cause | the cause id this outcome serves |
+| 48 | 32 | contract | digest of the contract record in force |
+| 80 | 8 | declared | the declared limit for `field` (0 when absent) |
+| 88 | 8 | used | the deterministic amount used, 0 for a measured field |
+
+Measured amounts (CPU, wall, GPU, energy) go in the annotation, never the
+identity (resource-contract section 4). The 8-byte cause of the first
+arch#96 draft is refused by length (vector `m073`).
+
+**Verifier rules versus join rules.** A TRN1 verifier checks the rules in
+the tables above, one file at a time, with the refusal codes of section 6.
+It does **not** check: that a minted cause recomputes, that a cause is
+minted once, CAUSE placement and adjacency, that a RESOURCE or RECEIPT_BIND
+names a cause opened earlier in the run, that an effect or branch is
+preceded by a CAUSE REF, ADOPT origins, RUN_LINK parents, or receipt
+contents. Those are steps 3 to 10 of the causal join (causal-id-join section
+4), which has its own outcome line and codes (`CAUSE_DIGEST`, `REF_UNKNOWN`
+and the rest), and some of which need more than one file (a child run's
+causes are opened by its parent). A transcript that breaks only a join rule
+**verifies**; the corpus lists the join refusals it expects in
+`vectors/join.txt` (section 9).
+
 ## 6. Refusal codes
 
 Zero means accept. A refusal is a negative integer from this table, and only
@@ -209,7 +307,7 @@ from this table.
 | Code | Name | Meaning |
 |---|---|---|
 | -1 | MAGIC | first four bytes are not `TRN1` |
-| -2 | VERSION | schema is not 1 (unknown version, older or newer) |
+| -2 | VERSION | schema is not 1 or 3 (unknown version, older or newer; section 10) |
 | -3 | LENGTH | buffer ends inside the header or a record; a length above its limit; bytes after END |
 | -4 | NONCANONICAL | a flag or reserved field is not zero |
 | -5 | UNKNOWN | unknown record type, unknown subsystem, or producer 0 or unknown |
@@ -227,7 +325,7 @@ order. "event" is the position k of the record being checked (0 = header).
 Header:
 
 1. Fewer than 4 bytes: LENGTH. Magic not `TRN1`: MAGIC.
-2. Fewer than 6 bytes: LENGTH. schema not 1: VERSION.
+2. Fewer than 6 bytes: LENGTH. schema not 1 and not 3: VERSION.
 3. Fewer than 48 bytes: LENGTH. flags not 0: NONCANONICAL.
 4. producer 0 or unknown: UNKNOWN.
 5. reserved not zero: NONCANONICAL.
@@ -235,7 +333,8 @@ Header:
 Then for record k = 1, 2, ...:
 
 1. Buffer ends exactly here: TRUNCATED. Fewer than 56 bytes left, or k above 4096: LENGTH.
-2. type unknown: UNKNOWN. subsystem unknown: UNKNOWN.
+2. type unknown for the file's schema (types 17 to 21 under schema 1, type 20
+   under every schema): UNKNOWN. subsystem unknown: UNKNOWN.
 3. reserved not zero: NONCANONICAL.
 4. ident_len or annot_len above 65536: LENGTH.
 5. seq not k: GAP.
@@ -243,9 +342,14 @@ Then for record k = 1, 2, ...:
 7. identity plus annotation not fully present: LENGTH.
 8. Shape, in this order: ident_len rule for the type; END-and-only-END has
    subsystem 0; CAP_TRANSITION op; CRASH_BOUNDARY last_durable_seq < k;
-   RX_CRUMB canonical bytes; ARGUS_EVENT chained flag; END annot_len 0.
-   Any failure: SHAPE.
-9. Reserved fields inside the identity: NONCANONICAL.
+   RX_CRUMB canonical bytes; ARGUS_EVENT chained flag; END annot_len 0;
+   then (schema 3) CAUSE mode, CAUSE local_kind (MINT and ADOPT),
+   REF local_kind zero, CAUSE local (MINT and ADOPT), REF local zero, RECEIPT_BIND
+   format, RUN_LINK relation, RUN_LINK is record 1, RESOURCE op, RESOURCE
+   reason, RESOURCE field. Any failure: SHAPE.
+9. Reserved fields inside the identity, then (schema 3) CAUSE root digest
+   zero for ADOPT and REF, RECEIPT_BIND reserved, RUN_LINK reserved,
+   RESOURCE reserved: NONCANONICAL.
 10. Embedded digests: RX_CRUMB digest, EXTERNAL_INPUT content, ARGUS
     continuity then ARGUS link. Any failure: DIGEST.
 11. If END: record_count not k: GAP. Bytes remain after END: LENGTH with
@@ -292,7 +396,11 @@ digest against an independently stored copy. Consumers must not treat
 ## 9. Conformance corpus
 
 `vectors/expected.txt` lists every transcript as `<file> <verify line>`;
-`vectors/compare.txt` lists pairs as `<expected> <actual> <compare line>`.
+`vectors/compare.txt` lists pairs as `<expected> <actual> <compare line>`;
+`vectors/join.txt` lists `<file> JOIN_REFUSED reason=<CODE> run=<64 hex> event=<k>`
+for transcripts that verify but that the causal join (section 5.5) must
+refuse, the join set being that one file. The reference verifier does not
+read `join.txt`; it is input for a joiner, and NOT_RUN until one checks it.
 Lines starting with `#` are comments. Plain text, so C, shell, Rust and
 Omega harnesses can read them without a JSON parser.
 
@@ -303,6 +411,11 @@ Omega harnesses can read them without a JSON parser.
 | Forged replays | `f001` .. `f006` | valid chains with a different history: omission, reorder, changed seed, changed capability generation inside a crumb, extra record, early stop. Each verifies alone and DIVERGEs from g001 at the named record |
 | Byte damage | `m001` .. `m018` | g001 damaged after writing: omission, reorder, bit flips (identity, annotation, prev, seq, run id, magic, crumb bytes, END), truncation (header, mid record, inside END, at a record boundary), empty file, trailing byte, duplicate |
 | Built refusals | `m020` .. `m065` | rechained so only the named check can fire: unknown versions (2 and 0), flags, producer, reserved fields, unknown type and subsystem, check order cases, oversize identity, every SHAPE rule, every DIGEST rule including an omitted ARGUS event the writer rechained |
+| 0.2 golden | `g006` .. `g008` | schema 3. g006 one sovcore request start to receipt: CAUSE MINT, RESOURCE charge, CAUSE REF before a branch and before an effect, refund, RECEIPT_BIND; g007 a child run (RUN_LINK as record 1 naming g006's BRANCH_CREATE, CAUSE ADOPT, RESOURCE cancel); g008 a replay of g006 with another run id and receipt digest, which MATCHes g006 |
+| 0.2 edge positive | `p003` | top of each range: local_kind 4, REFUSE reason 4, CANCEL reason 3, OVERRUN, OVER_OBSERVED on field 10, receipt format 1 |
+| 0.2 forged | `f007` .. `f009` | rechained: cause bit flip in a RESOURCE, RESOURCE before its MINT (reorder), MINT omitted before the RESOURCE. Each verifies and DIVERGEs from g006 |
+| Join only | `j001` .. `j005` | verify under TRN1; `join.txt` names the join refusal: CAUSE_DIGEST, DOUBLE_MINT, REF_MISSING, COMMIT_ORPHAN, RECEIPT_CAUSE (f007 and f009 are listed there too, REF_UNKNOWN; f008 is CAUSE_PLACEMENT at its late MINT, aien-architecture#102 Q7) |
+| 0.2 refusals | `m070` .. `m094` | a valid 0.2 record under a schema 1 header (UNKNOWN); type 20 (UNKNOWN); wrong lengths (CAUSE 79 bytes, RESOURCE with the old 8-byte cause); every 0.2 SHAPE and NONCANONICAL rule; a check-order case; byte damage on g006 (cause bit flip, reorder); a CAUSE REF with nonzero local_kind (m093) and nonzero local (m094) |
 
 Regenerate with `tools/make-corpus.sh vectors`. The generator is shell plus
 coreutils (`sha256sum`, `od`, `sed`) and builds every byte from the tables
@@ -321,18 +434,29 @@ TRN1_CONFORMANCE impl=<c|rust|osc|...> pass=N fail=0
 
 ## 10. Versioning
 
-- Wire schema 1 is the only accepted schema. A verifier refuses every other
-  schema value with VERSION; it never reinterprets an older or newer file.
+- The header `schema` names the record registry in force. Schema 1: contract
+  0.1 registry (types 1 to 16 and END). Schema 3: contract 0.2 registry
+  (schema 1 plus types 17, 18, 19, 21). Schema 2 is never assigned: vector
+  `m020` has pinned it as an unknown schema since 0.1.0, and existing
+  vectors keep their outcomes.
+- Version negotiation is by the header only. A reader accepts exactly the
+  schemas it implements and refuses every other value with VERSION at event
+  0; it never reinterprets an older or newer file. So a 0.1 reader refuses a
+  schema 3 file cleanly (VERSION, event 0), and a 0.2 reader refuses a
+  0.2 record inside a schema 1 file (UNKNOWN at that record, vector `m070`).
+  A 0.2 reader accepts both schema 1 and schema 3 files.
+- A writer writes schema 1 when it emits only 0.1 record types, so 0.1
+  readers keep reading it, and schema 3 when it emits any 0.2 type.
 - While the contract is 0.Y.Z, a new record type, subsystem or field is a
   minor version with new vectors; existing vectors keep their outcomes or the
   change is recorded as breaking in CHANGELOG.md.
 - Adding vectors the reference already decides is a patch version.
   Changing a refusal code or the check order is a breaking change.
-- No feature negotiation: one schema, checked exactly. A writer that needs a
+- No feature negotiation beyond the schema value: each schema is checked exactly. A writer that needs a
   record this spec lacks proposes it here first; it does not invent a type
   number.
 
-## 11. Limits of v0 (stated, not hidden)
+## 11. Limits (stated, not hidden)
 
 - No runtime writes TRN1 yet. RX_CRUMB and ARGUS_EVENT layouts were checked
   against the live omega and aienos sources named above, and a host-only
@@ -343,6 +467,8 @@ TRN1_CONFORMANCE impl=<c|rust|osc|...> pass=N fail=0
   exists (sovereign-core is scaffolding, omega has none).
 - Cross-record checks beyond ARGUS continuity are left to replayers: a
   crumb's parent digest is not checked against an earlier RX_CRUMB record in
-  the same file, and effect commits are not matched to intents.
+  the same file, and effect commits are not matched to intents. In 0.2.0
+  the causal checks are join rules (section 5.5), not verifier rules.
+- TRAIN_DISPATCH (type 20) has a number and no layout.
 - No signature over the final digest. Anchoring the final digest in a signed
   receipt belongs to the receipt format, not to TRN1.

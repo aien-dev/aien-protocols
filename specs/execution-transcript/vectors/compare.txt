@@ -14,3 +14,9 @@ g001.trn f005.trn DIVERGENCE event=11 expected=527723c59673130672775773c5c0915ca
 g001.trn f006.trn DIVERGENCE event=6 expected=a731fd198172bb345490827dfe2d3c4f5db41ec179c633d1e10a8d4b12564125 actual=b6877b58278d02422bdac96fd2e85eca59d1975635f97c2f2d6f5e2b079cd112 subsystem=omega-world
 g001.trn m001.trn refuse actual -7 event=3
 m008.trn g001.trn refuse expected -1 event=0
+# Contract 0.2.0 (wire schema 3) pairs.
+g006.trn g006.trn MATCH through 10
+g006.trn g008.trn MATCH through 10
+g006.trn f007.trn DIVERGENCE event=2 expected=6f80691db1c9726251d0420c1761c511d5aeb037e09cdcf29ee7b5f169a63c87 actual=8ddc47e04dfb36d8825db8f0695556886f0ea80efa976d192e2641c0ec4c3a80 subsystem=sovcore-runtime
+g006.trn f008.trn DIVERGENCE event=1 expected=2a68bae2eae0bdad70cedc8db413f6e532bb3ebd6f7a6a3b2b6cdd4396f68064 actual=282eb7893d45b8ab0b2fd40b34b2602a445e71f51e5f531ddcebe21b99a04c4d subsystem=sovcore-runtime
+g006.trn f009.trn DIVERGENCE event=1 expected=2a68bae2eae0bdad70cedc8db413f6e532bb3ebd6f7a6a3b2b6cdd4396f68064 actual=282eb7893d45b8ab0b2fd40b34b2602a445e71f51e5f531ddcebe21b99a04c4d subsystem=sovcore-runtime

@@ -14,6 +14,14 @@ VERSIONING.md.
   rule, and a shared conformance corpus (122 family vectors, 5 edge
   positives, 44 refusals) with a shell generator. Extracted from the running
   Rust reference; no new format features.
+- `specs/execution-transcript`: TRN1 contract 0.2.0. Adds wire schema 3
+  with record types 17 CAUSE, 18 RECEIPT_BIND, 19 RUN_LINK and 21 RESOURCE
+  (32-byte cause id); type 20 TRAIN_DISPATCH reserved without a layout.
+  Schema 1 files and every 0.1.0 vector keep their outcomes; schema 2 stays
+  unassigned. Reference verifier accepts schemas 1 and 3; 0.2 goldens,
+  forged histories, 23 refusal vectors and a join expectation list
+  (`vectors/join.txt`). Sources: aien-architecture causal-id-join-v0
+  (fa46a26) and resource-contract-v0 (ddc17b7).
 
 ## [v0.1.0] - 2026-09-23
 
