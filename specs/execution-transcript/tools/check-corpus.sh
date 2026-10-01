@@ -43,9 +43,12 @@ for cx in flip drop attr; do
     fi
 done
 echo "TRN1_CORPUS_SELFTEST counterexamples=3 detected=3"
-if ! diff -r "$vec" "$tmp/regen" >/dev/null; then
+# Only the crumb tool's two exact file names are ignored (RFC-0001 drops
+# .crumb / .crumb.local into directories); any other stray file still differs.
+ignore="-x .crumb -x .crumb.local"
+if ! diff -r $ignore "$vec" "$tmp/regen" >/dev/null; then
     echo "TRN1_CORPUS_STALE: vectors/ differs from make-corpus.sh output" >&2
-    diff -rq "$vec" "$tmp/regen" >&2 || true
+    diff -rq $ignore "$vec" "$tmp/regen" >&2 || true
     exit 1
 fi
 echo "TRN1_CORPUS_REGEN identical"
