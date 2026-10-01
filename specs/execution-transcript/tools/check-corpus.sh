@@ -4,8 +4,8 @@
 # Usage: check-corpus.sh [CC]        (default CC: cc)
 #
 # 1. Regenerates the corpus into a temporary directory with make-corpus.sh
-#    and requires it to be byte-identical to vectors/ (a stale or hand-edited
-#    corpus fails here).
+#    and requires it to be byte-identical to vectors/, .gitattributes included
+#    (a stale or hand-edited corpus fails here).
 # 2. Builds trn1_verify.c with warnings as errors, plus an ASan/UBSan build
 #    when the compiler supports it.
 # 3. Runs every expected.txt and compare.txt line; prints
@@ -20,6 +20,29 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
 bash "$here/make-corpus.sh" "$tmp/regen" >/dev/null
+# The comparison is the whole directory, byte for byte, including
+# vectors/.gitattributes (make-corpus.sh emits it). Before trusting it, prove
+# it catches drift on a copy of the regenerated corpus (counterexamples):
+#   a) one bit flipped in one vector must differ;
+#   b) a vector missing must differ;
+#   c) the line-ending pin (.gitattributes) removed must differ.
+first=$(ls "$tmp/regen"/*.trn | head -n 1)
+test -s "$first" || { echo "TRN1_CORPUS_SELFTEST: no non-empty vector to alter" >&2; exit 2; }
+for cx in flip drop attr; do
+    rm -rf "$tmp/cx" && cp -r "$tmp/regen" "$tmp/cx"
+    f="$tmp/cx/$(basename "$first")"
+    case $cx in
+    flip) b=$(od -An -N1 -tu1 "$f" | tr -d ' ')
+          printf "\\$(printf '%03o' $((b ^ 1)))" | dd of="$f" bs=1 seek=0 count=1 conv=notrunc 2>/dev/null ;;
+    drop) rm -f "$f" ;;
+    attr) rm -f "$tmp/cx/.gitattributes" ;;
+    esac
+    if diff -r "$tmp/cx" "$tmp/regen" >/dev/null; then
+        echo "TRN1_CORPUS_SELFTEST: counterexample '$cx' not detected" >&2
+        exit 2
+    fi
+done
+echo "TRN1_CORPUS_SELFTEST counterexamples=3 detected=3"
 if ! diff -r "$vec" "$tmp/regen" >/dev/null; then
     echo "TRN1_CORPUS_STALE: vectors/ differs from make-corpus.sh output" >&2
     diff -rq "$vec" "$tmp/regen" >&2 || true

@@ -20,7 +20,11 @@ set -eu
 export LC_ALL=C
 OUT=${1:?OUT_DIR}
 mkdir -p "$OUT"
-rm -f "$OUT"/*.trn "$OUT"/expected.txt "$OUT"/compare.txt
+rm -f "$OUT"/*.trn "$OUT"/expected.txt "$OUT"/compare.txt "$OUT"/.gitattributes
+# Vectors are exact bytes (digests cover every byte), so git must never apply
+# line-ending or text conversion to them. This file is part of the corpus and
+# is checked by check-corpus.sh like any vector.
+printf '*.trn binary\n' >"$OUT/.gitattributes"
 
 # ---- hex helpers (all integers little-endian) ---------------------------
 # le BYTES VALUE: VALUE as BYTES little-endian bytes, in hex
