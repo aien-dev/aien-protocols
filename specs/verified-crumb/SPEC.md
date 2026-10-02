@@ -1,7 +1,7 @@
 # Verified Crumb: VerifiedCrumbV1 (VC1)
 
 **Status**: Draft v0 (VC1-FMT, stage 1 of the Verified Crumb program, 2026-10-02). Not yet produced or consumed by any runtime.
-**Contract version**: 0.1.0 (major zero: may change by minor bump, see VERSIONING.md)
+**Contract version**: 0.2.0 (major zero: may change by minor bump, see VERSIONING.md)
 **Format version field**: `1`
 **License**: Community Specification License 1.0
 **Reference checker**: [`tools/vc1-check.c`](tools/vc1-check.c), C99, self-contained (own SHA-256, libc only)
@@ -154,19 +154,39 @@ These are VC1 design decisions, not facts about aien-proof today (OPEN: confirm 
 
 Inputs: a lockfile (section 8), a store keyed by `semantic_id`, a profile table, and a domain (section 7). The resolver MUST proceed in this order and MUST refuse on the first failure. It never returns a partial closure.
 
-1. **Lock.** Each imported name is looked up in `omega.lock`. Absent or malformed lock: `DEPENDENCY_NOT_PINNED`.
+1. **Lock.** Each imported name is looked up in `omega.lock`. An import with no line in the lock, or an absent or malformed lock: `DEPENDENCY_NOT_PINNED`. A lock line whose name the source never imports: `UNVERIFIED_DEPENDENCY` (a pin with no import behind it; section 6.2).
 2. **Store.** Fetch the VC by the locked `semantic_id`. The name index is never consulted for trust. Absent: `UNVERIFIED_DEPENDENCY`.
 3. **Identity.** Decode the VC (format refusals, section 3.6). Its `semantic_id` must equal the key it was fetched by, and the program recomputed from the stored source or IR must have that id (`omega_program_compute_id`) and that `source_or_ir_digest`. Mismatch: `UNVERIFIED_DEPENDENCY`. The locked `receipt` must equal `receipt_id`: else `RECEIPT_HASH_MISMATCH`.
 4. **Taint.** In `omega-build`, a VC that the store marks tainted, or that lists the reserved capability `omega-dev.taint`, is refused: `TAINTED_ARTIFACT`. (ARCH-0029 Decision 5: omega-dev output never enters the store, so this is defence in depth; the reserved capability name is a VC1 proposal, OPEN.)
 5. **Profile.** `verifier_profile` not in the profile table: `UNKNOWN_VERIFIER_PROFILE`. `verifier_version` below the table minimum: `VERIFIER_TOO_OLD` (a VC1 addition; ARCH-0029 Decision 9 has no code for it, and an earlier draft of this spec wrongly used `STALE_RECEIPT` for it).
 6. **Receipt.** Receipt missing from the store: `MISSING_RECEIPT`. Receipt fails rule 1, 3, 5 or 6 of section 5.1, or rule 4 for the `semantic_id` (it does not name this program): `RECEIPT_HASH_MISMATCH`. Receipt names this `semantic_id` but not the current `source_or_ir_digest` (it covers an older source: it predates a change to the source it covers, ARCH-0029 Decision 9 code 6): `STALE_RECEIPT`. Receipt not `PASS` or tier too low: `UNVERIFIED_DEPENDENCY`.
 7. **Edges.** Each dependency entry's VC (resolved by steps 2 to 7 with the entry's `semantic_id`, and no lock) must have `contract_id` equal to `required_contract`, else `UNVERIFIED_DEPENDENCY`. A dependency already on the current resolution path: `DEPENDENCY_CYCLE`.
-8. **Declared imports.** Every import the program's source or IR actually makes must be a `dependencies[]` entry; otherwise `UNDECLARED_IMPORT`. This is checked where the program is compiled or verified.
+8. **Declared imports.** The set of programs the VC's stored source or IR actually imports must equal the set of `semantic_id` in `dependencies[]`. An import with no `dependencies[]` entry: `UNDECLARED_IMPORT`. A `dependencies[]` entry that the stored source or IR does not import: `UNVERIFIED_DEPENDENCY`. Section 6.2 has the one table for this and the equivalent checks in the lock and in a component manifest. OPEN (UNVERIFIED, confidence 70%): how an import in a stored source is mapped to a `semantic_id` (the name has no lock in this step) is not defined by this spec; VC1-STORE and omega own it. No implementation executes this step today.
 9. **Closure.** The union of all visited VCs is the transitive closure. A resolution succeeds only if every VC in it passed 2 to 7.
 
 ### 6.1 Resolve refusal codes
 
-`UNVERIFIED_DEPENDENCY`, `MISSING_RECEIPT`, `RECEIPT_HASH_MISMATCH`, `DEPENDENCY_NOT_PINNED`, `DEPENDENCY_CYCLE`, `STALE_RECEIPT` (the receipt predates a change to the source it covers), `UNDECLARED_IMPORT`, `TAINTED_ARTIFACT`, `UNKNOWN_VERIFIER_PROFILE` (the nine ARCH-0029 Decision 9 codes, same meanings), plus the VC1 addition `VERIFIER_TOO_OLD`. They are names, not numbers; a consumer may map them to its own exit codes. Format refusals (section 3.6) also refuse a resolution.
+`UNVERIFIED_DEPENDENCY`, `MISSING_RECEIPT`, `RECEIPT_HASH_MISMATCH`, `DEPENDENCY_NOT_PINNED`, `DEPENDENCY_CYCLE`, `STALE_RECEIPT` (the receipt predates a change to the source it covers), `UNDECLARED_IMPORT`, `TAINTED_ARTIFACT`, `UNKNOWN_VERIFIER_PROFILE` (the nine ARCH-0029 Decision 9 codes, same meanings; the declaration codes `DEPENDENCY_NOT_PINNED`, `UNDECLARED_IMPORT` and `UNVERIFIED_DEPENDENCY` are pinned down in section 6.2), plus the VC1 addition `VERIFIER_TOO_OLD`. They are names, not numbers; a consumer may map them to its own exit codes. Format refusals (section 3.6) also refuse a resolution.
+
+### 6.2 One meaning per code for declaration checks
+
+Three places can declare what a program depends on: the lock (`omega.lock`, a digest pin per name), a component manifest (the declared dependency list of a unit such as an `aien-closure` `[deps]` table), and the VC (`dependencies[]`). The program itself says what it actually uses: its imports, or for a Rust component its edges in the build graph. Every disagreement between the two maps to exactly one of the existing nine codes. No code is added.
+
+| Situation | Code |
+|---|---|
+| An import (or actual edge) has no line in the lock, or its manifest entry carries no receipt pin or a pin that is not the dependency's own receipt | `DEPENDENCY_NOT_PINNED` |
+| A lock line names something the source never imports | `UNVERIFIED_DEPENDENCY` |
+| A declared dependency (manifest entry, or `dependencies[]` entry) that is not an actual import or edge | `UNVERIFIED_DEPENDENCY` |
+| An actual import or edge that the manifest does not declare | `UNDECLARED_IMPORT` |
+| The VC's stored source or IR imports a program with no `dependencies[]` entry (step 8) | `UNDECLARED_IMPORT` |
+| A `dependencies[]` entry the VC's stored source or IR does not import (step 8) | `UNVERIFIED_DEPENDENCY` |
+
+The two rules behind the table:
+
+- `UNDECLARED_IMPORT` means the program uses something its dependency list does not declare: the program does more than it says. This is the wording of ARCH-0029 Decision 9 code 7 ("an edge the manifest does not declare"). It never describes an extra declaration.
+- An extra declaration (a pin or a listed dependency with no import behind it) is `UNVERIFIED_DEPENDENCY`: nothing verifies it as an edge of the program. ARCH-0029 Decision 9 code 1 words it as "no admissible receipt"; this spec reads that as covering a dependency that cannot be shown to be an edge, because the ADR has no code for extra declarations and the stage 5 specification may not add one. Extra declarations are refused, never ignored, so the closure digest and the receipt dependency list stay exact.
+
+Precedence: where the missing declaration is a digest pin in the lock, `DEPENDENCY_NOT_PINNED` wins over `UNDECLARED_IMPORT`; `UNDECLARED_IMPORT` is for a missing entry in a dependency list that is not the lock (manifest or `dependencies[]`). When several rows apply, the first failing step of section 6 reports.
 
 ## 7. The two domains
 
@@ -216,11 +236,12 @@ Vector files are lowercase hex, one line, ending in a newline.
 
 ## 10. Versioning
 
-Contract 0.1.0. While major is zero, a change to the byte layout, the id derivation or a code name is a minor bump with migration notes in CHANGELOG.md (VERSIONING.md). `format_version` changes only when the layout changes; a decoder refuses versions it does not know.
+Contract 0.2.0. While major is zero, a change to the byte layout, the id derivation or a code name is a minor bump with migration notes in CHANGELOG.md (VERSIONING.md). `format_version` changes only when the layout changes; a decoder refuses versions it does not know.
 
 ## 11. Limits (stated, not hidden)
 
 - `vc1-check` covers format and id only. It does not read lockfiles, stores or receipts, and does not implement BLAKE3, so section 5.1 and section 6 are specified here but not yet executed by any tool. Stages VC1-STORE, VC1-RESOLVE and VC1-CI implement them.
+- The declaration table in section 6.2 is not covered by golden vectors: a golden vector is one VC, and these checks compare a program's imports with a lock, manifest or VC, which needs a source or a build graph. Implementations carry the tests: `aien-closure` (rows for manifest and edge), omega `omega_resolve` (rows for lock and imports). Step 8 proper (stored source against `dependencies[]`) is executed by no implementation yet.
 - Sections 4.2, 4.4, 5.1 and the profile table are design proposals awaiting owner agreement.
 - Golden ids come from synthetic ids (repeated bytes), not from real programs.
 - `NONCANONICAL_SET` is vectored only for exports (not realizations or capabilities).
