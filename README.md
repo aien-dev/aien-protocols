@@ -10,7 +10,8 @@ Research-grade and pre-alpha. The specifications and reference Rust crates (Apac
 
 ```text
 specs/       Normative specifications (Community Specification License 1.0):
-             agent-state, inference, evaluation
+             agent-state, inference, evaluation, crumb-visible, execution-transcript,
+             evidence-receipt (partial), verified-crumb
 crates/      Reference Rust crates (Apache-2.0), legacy:
              aien-protocol-types, aien-agent-state-abi, aien-inference-protocol,
              aien-inference-client, aien-action-protocol, aien-event-protocol,
