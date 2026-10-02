@@ -33,6 +33,15 @@ VERSIONING.md.
   checker (`tools/vc1-check.c`), and `tools/check-golden.sh` with 3 vector
   mutants and 9 checker mutants. No consumer pins it yet. Open design items
   are listed in SPEC.md sections 4 and 11 (`digest_kind` byte, 0x01 source / 0x02 IR, is part of the encoding).
+  Contract 0.2.0 (VC1-RECONCILE): SPEC section 6.2 fixes one meaning per declaration code.
+  `UNDECLARED_IMPORT` is only "the program uses something its dependency list
+  does not declare" (ARCH-0029 code 7); a lock line, manifest entry or
+  `dependencies[]` entry with no import behind it is `UNVERIFIED_DEPENDENCY`;
+  an import with no lock line is `DEPENDENCY_NOT_PINNED`. SPEC step 8 now also
+  refuses a `dependencies[]` entry the stored source does not import. No byte
+  layout, id or golden vector changes. Migration: omega `omega_resolve.c` used
+  `UNDECLARED_IMPORT` for a lock line with no import and must move to
+  `UNVERIFIED_DEPENDENCY`; aien-closure already agrees.
 - `specs/evidence-receipt`: partial extraction of aien-proof EvidenceReceiptV1
   (`SUBSET.md`): only the identity derivation and fields VC1 binds to,
   pinned to aien-sovereign-core `40dd373`. Full extraction is owed.
