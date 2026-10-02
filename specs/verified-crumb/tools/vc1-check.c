@@ -10,7 +10,7 @@
  *                                 print "VC1_CONFORMANCE impl=c pass=N fail=M"
  *
  * Exit: 0 accept/all pass, 1 refuse/any fail, 2 usage or I/O error.
- * Compile with -DVC1_MUTANT=N (1..5) to build a deliberately broken checker;
+ * Compile with -DVC1_MUTANT=N (1..9) to build a deliberately broken checker;
  * tools/check-golden.sh proves the corpus rejects every mutant.
  */
 #include <stdint.h>
@@ -102,7 +102,7 @@ enum code {
     /* format-level */
     BAD_DOMAIN_TAG = 20, UNKNOWN_FORMAT_VERSION, TRUNCATED, TRAILING_BYTES,
     DUPLICATE_DEPENDENCY, UNSORTED_DEPENDENCIES, NONCANONICAL_SET, BAD_STRING,
-    ZERO_ID, TOO_MANY_ENTRIES
+    ZERO_ID, TOO_MANY_ENTRIES, BAD_DIGEST_KIND
 };
 static const char *code_name(int c) {
     switch (c) {
@@ -118,6 +118,7 @@ static const char *code_name(int c) {
     case BAD_STRING: return "BAD_STRING";
     case ZERO_ID: return "ZERO_ID";
     case TOO_MANY_ENTRIES: return "TOO_MANY_ENTRIES";
+    case BAD_DIGEST_KIND: return "BAD_DIGEST_KIND";
     }
     return "?";
 }
@@ -126,7 +127,7 @@ typedef struct { uint8_t semantic_id[32], required_contract[32]; } dep_t;
 typedef struct { char s[VC_STR_MAX + 1]; } str_t;
 typedef struct {
     uint32_t format_version;
-    uint8_t semantic_id[32], contract_id[32], source_or_ir_digest[32];
+    uint8_t semantic_id[32], contract_id[32], digest_kind, source_or_ir_digest[32];
     uint32_t n_real; uint8_t realization_ids[VC_MAX][32];
     uint32_t n_dep; dep_t deps[VC_MAX];
     uint8_t receipt_id[32]; str_t verifier_profile, verifier_version; uint8_t evidence_root[32];
@@ -173,13 +174,20 @@ static void rd_str(cur_t *c, str_t *out) {
     if (!need(c, (size_t)len)) return;
     for (uint64_t i = 0; i < len; i++) {
         uint8_t ch = c->b[c->pos + i];
-        if (ch < 0x21 || ch > 0x7e) { c->pos += (size_t)i; fail(c, BAD_STRING); return; }
+#if VC1_MUTANT == 7
+        if (0) {
+#else
+        if (ch < 0x21 || ch > 0x7e) {
+#endif
+            c->pos += (size_t)i; fail(c, BAD_STRING); return; }
     }
     memcpy(out->s, c->b + c->pos, (size_t)len); out->s[len] = 0; c->pos += (size_t)len;
 }
 static uint32_t rd_count(cur_t *c) {
     uint32_t n = rd32(c);
+#if VC1_MUTANT != 8
     if (!c->err && n > VC_MAX) { fail(c, TOO_MANY_ENTRIES); return 0; }
+#endif
     return n;
 }
 
@@ -192,9 +200,19 @@ static int decode(const uint8_t *b, size_t n, vc_t *v, size_t *err_at) {
     c.pos = TAG_LEN;
     v->format_version = rd32(&c);
     if (!c.err && v->format_version != VC_VERSION) { c.pos -= 4; fail(&c, UNKNOWN_FORMAT_VERSION); c.pos += 4; }
-    rd_id(&c, v->semantic_id); rd_id(&c, v->contract_id); rd_id(&c, v->source_or_ir_digest);
+    rd_id(&c, v->semantic_id); rd_id(&c, v->contract_id);
+    if (need(&c, 1)) {
+        v->digest_kind = c.b[c.pos];
+#if VC1_MUTANT != 9
+        if (v->digest_kind != 1 && v->digest_kind != 2) fail(&c, BAD_DIGEST_KIND);
+#endif
+        c.pos++;
+    }
+    rd_id(&c, v->source_or_ir_digest);
+#if VC1_MUTANT != 6
     if (!c.err && (is_zero(v->semantic_id) || is_zero(v->contract_id) || is_zero(v->source_or_ir_digest)))
         fail(&c, ZERO_ID);
+#endif
     v->n_real = rd_count(&c);
     for (uint32_t i = 0; i < v->n_real && !c.err; i++) {
         rd_id(&c, v->realization_ids[i]);
@@ -275,7 +293,7 @@ static int encode(vc_t *v, buf_t *o) {
         if (memcmp(v->deps[i - 1].semantic_id, v->deps[i].semantic_id, 32) == 0) return DUPLICATE_DEPENDENCY;
     o->n = 0;
     put(o, TAG, TAG_LEN); put32(o, v->format_version);
-    put(o, v->semantic_id, 32); put(o, v->contract_id, 32); put(o, v->source_or_ir_digest, 32);
+    put(o, v->semantic_id, 32); put(o, v->contract_id, 32); put(o, &v->digest_kind, 1); put(o, v->source_or_ir_digest, 32);
     put32(o, v->n_real); for (uint32_t i = 0; i < v->n_real; i++) put(o, v->realization_ids[i], 32);
     put32(o, v->n_dep);
     for (uint32_t i = 0; i < v->n_dep; i++) { put(o, v->deps[i].semantic_id, 32); put(o, v->deps[i].required_contract, 32); }

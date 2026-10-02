@@ -9,7 +9,7 @@
 #     implementation independent of the C tool.
 #  4. Vector mutants (flip a byte, reorder deps, drop the domain tag) must be
 #     detected: the checker's answer must differ from the golden expectation.
-#  5. Checker mutants (-DVC1_MUTANT=1..5) must each make the corpus FAIL.
+#  5. Checker mutants (-DVC1_MUTANT=1..9) must each make the corpus FAIL.
 # Host-only. Shell, xxd, sha256sum and a C99 compiler. No Python.
 set -eu
 export LC_ALL=C
@@ -48,13 +48,17 @@ while read -r name verb arg; do
     n=$((n + 1))
 done < "$gold/expected.txt"
 echo "VC1_INDEPENDENT_SHA256 ids=$n agree"
+# same digest bytes, different digest_kind: ids must differ
+id1=$(grep "^v01_minimal " "$gold/expected.txt" | cut -d" " -f3); id4=$(grep "^v04_ir_kind " "$gold/expected.txt" | cut -d" " -f3)
+[ "$id1" != "$id4" ] || { echo "VC1_KIND_NOT_IN_ID" >&2; exit 1; }
+echo "VC1_DIGEST_KIND_IN_ID v01(source) != v04(ir)"
 
 # 4. vector mutants, applied to v02_deps (hex string surgery, 2 hex chars per byte)
 v=$(tr -d '\n' < "$gold/v02_deps.hex")
 exp=$(grep '^v02_deps ' "$gold/expected.txt" | cut -d' ' -f2-)
 tag=44              # domain tag is 22 bytes = 44 hex chars
 sem=$((tag + 8))    # semantic_id starts after tag and 4-byte version
-deps=$((tag + 8 + 3 * 64 + 8 + 2 * 64 + 8))  # first dep entry: tag, version, 3 ids, realization count, 2 realizations, dep count
+deps=$((tag + 8 + 3 * 64 + 2 + 8 + 2 * 64 + 8))  # first dep entry: tag, version, 3 ids, digest_kind byte, realization count, 2 realizations, dep count
 flip=$(printf '%s' "$v" | sed "s/^\(.\{$sem\}\)../\1ee/")
 d1=${v:$deps:128}; d2=${v:$((deps + 128)):128}
 swap="${v:0:$deps}$d2$d1${v:$((deps + 256))}"
@@ -73,7 +77,7 @@ echo "VC1_VECTOR_MUTANTS detected=$mut/3"
 
 # 5. checker mutants
 surv=0
-for k in 1 2 3 4 5; do
+for k in 1 2 3 4 5 6 7 8 9; do
     "$CC" -std=c99 -O2 -DVC1_MUTANT=$k -o "$tmp/mut$k" "$here/vc1-check.c"
     if "$tmp/mut$k" --corpus "$gold" >"$tmp/mut$k.out" 2>&1; then
         echo "VC1_CHECKER_MUTANT_SURVIVED $k" >&2; surv=$((surv + 1))
@@ -82,5 +86,5 @@ for k in 1 2 3 4 5; do
     fi
 done
 [ "$surv" -eq 0 ] || exit 1
-echo "VC1_CHECKER_MUTANTS killed=5/5"
+echo "VC1_CHECKER_MUTANTS killed=9/9"
 echo "VC1_GOLDEN_CHECK PASS"

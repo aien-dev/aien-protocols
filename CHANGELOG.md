@@ -27,12 +27,12 @@ VERSIONING.md.
   `AIEN_VERIFIED_CRUMB_V1`, sorted unique lists, no padding), VC id = SHA-256
   of the canonical bytes, resolve rule (lock, semantic id, store, identity,
   receipt, transitive closure, refuse on any failure), 9 resolve refusal codes
-  plus 12 format refusal codes, the omega-dev (tainted) and omega-build
+  plus 13 format refusal codes and the VC1 addition `VERIFIER_TOO_OLD`, the omega-dev (tainted) and omega-build
   (verified only) domains, and the `omega.lock` text format. Receipt id binds
-  to the aien-proof BLAKE3 id. 12 golden vectors (3 accept, 9 refuse), a C
+  to the aien-proof BLAKE3 id. 17 golden vectors (4 accept, 13 refuse), a C
   checker (`tools/vc1-check.c`), and `tools/check-golden.sh` with 3 vector
-  mutants and 5 checker mutants. No consumer pins it yet. Open design items
-  are listed in SPEC.md sections 4 and 11.
+  mutants and 9 checker mutants. No consumer pins it yet. Open design items
+  are listed in SPEC.md sections 4 and 11 (`digest_kind` byte, 0x01 source / 0x02 IR, is part of the encoding).
 - `specs/evidence-receipt`: partial extraction of aien-proof EvidenceReceiptV1
   (`SUBSET.md`): only the identity derivation and fields VC1 binds to,
   pinned to aien-sovereign-core `40dd373`. Full extraction is owed.

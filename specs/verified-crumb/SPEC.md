@@ -27,6 +27,7 @@ VerifiedCrumbV1 is the following, in this order:
 | `format_version` | u32 | `1`; every other value is refused |
 | `semantic_id` | 32 bytes | the Omega program id (section 4.1) |
 | `contract_id` | 32 bytes | identity of the program's contract (section 4.2) |
+| `digest_kind` | u8 | what `source_or_ir_digest` covers: `0x01` canonical source, `0x02` canonical IR (section 4.3); any other value is refused |
 | `source_or_ir_digest` | 32 bytes | SHA-256 of the exact source or IR bytes the verifier checked (section 4.3) |
 | `realization_ids[]` | 0 to 256 x 32 bytes | digests of realizations of this program (section 4.4) |
 | `dependencies[]` | 0 to 256 x {`semantic_id` 32, `required_contract` 32} | what this program imports, and under which contract |
@@ -55,6 +56,7 @@ domain tag                      22 bytes, ASCII "AIEN_VERIFIED_CRUMB_V1" (no ter
 format_version                  u32 = 1
 semantic_id                     id
 contract_id                     id
+digest_kind                     u8 (0x01 source, 0x02 IR)
 source_or_ir_digest             id
 realization count N             u32      then N x id
 dependency count M              u32      then M x (semantic_id id, required_contract id)
@@ -85,7 +87,7 @@ Why SHA-256: omega's identities are SHA-256 (`omega_program.h:83`) and this repo
 
 ### 3.5 Refusal order
 
-A decoder reads fields in layout order and the first failure wins, so the code is a function of the bytes alone: domain tag, version, zero ids, realization order, each dependency in turn (self-dependency, zero ids, then duplicate or unsorted order against the previous entry), zero receipt id, strings, zero evidence root, exports order, capabilities order, trailing bytes. Reading past the end of input is `TRUNCATED` at that point.
+A decoder reads fields in layout order and the first failure wins, so the code is a function of the bytes alone: domain tag, version, `digest_kind`, zero ids, realization order, each dependency in turn (self-dependency, zero ids, then duplicate or unsorted order against the previous entry), zero receipt id, strings, zero evidence root, exports order, capabilities order, trailing bytes. Reading past the end of input is `TRUNCATED` at that point.
 
 ### 3.6 Format refusal codes
 
@@ -99,6 +101,7 @@ A decoder reads fields in layout order and the first failure wins, so the code i
 | `UNSORTED_DEPENDENCIES` | dependency `semantic_id` lower than the previous one |
 | `NONCANONICAL_SET` | realizations, exports or capabilities unsorted or duplicated |
 | `BAD_STRING` | length 0, length over 256, or a byte outside `0x21` to `0x7E` |
+| `BAD_DIGEST_KIND` | `digest_kind` is not `0x01` or `0x02` |
 | `ZERO_ID` | an all-zero id where section 3.3 forbids it |
 | `TOO_MANY_ENTRIES` | a count over 256 |
 | `MISSING_RECEIPT` | all-zero `receipt_id` (also a resolve code) |
@@ -120,7 +123,7 @@ with the same four 32-byte components as the program id, in that order. Stage VC
 
 ### 4.3 `source_or_ir_digest`
 
-SHA-256 of the exact bytes the verifier checked. VC1 does not say whether those bytes are source or IR. OPEN: whether to add a one-byte kind (report item).
+`digest_kind` says which: `0x01` canonical source, `0x02` canonical IR; any other value is refused (`BAD_DIGEST_KIND`). The digest is SHA-256 of the exact bytes the verifier checked. The kind sits in the canonical bytes, so the same digest bytes with a different kind give a different VC id (golden `v01_minimal` vs `v04_ir_kind`). Decided by the queen after inspection of PR 13; closes the former open question.
 
 ### 4.4 `realization_ids[]`
 
@@ -143,7 +146,7 @@ For the receipt stored at `<store>/receipts/<receipt_id as hex>.json`, all of th
 3. `receipt.output_digest` (32 bytes) equals `evidence_root`.
 4. `receipt.input_artifacts` lists `sha256:<hex semantic_id>` and `sha256:<hex source_or_ir_digest>`.
 5. `receipt.kind` equals `verifier_profile`.
-6. `receipt.dependencies` equals the sorted set of the `receipt_id` of each dependency's VC (so aien-proof `verify_chain`, `chain.rs:46`, also walks the closure).
+6. `receipt.dependencies` equals the sorted set of the `receipt_id` of each dependency's VC (duplicates collapse, as aien-proof sorts and de-duplicates receipt dependencies, `evidence.rs:446-451,579`; so aien-proof `verify_chain`, `chain.rs:46`, also walks the closure).
 
 These are VC1 design decisions, not facts about aien-proof today (OPEN: confirm with the aien-proof owner; report item). The receipt cannot contain the VC id (the VC contains the receipt id), so the binding runs through `semantic_id` and `source_or_ir_digest`.
 
@@ -155,15 +158,15 @@ Inputs: a lockfile (section 8), a store keyed by `semantic_id`, a profile table,
 2. **Store.** Fetch the VC by the locked `semantic_id`. The name index is never consulted for trust. Absent: `UNVERIFIED_DEPENDENCY`.
 3. **Identity.** Decode the VC (format refusals, section 3.6). Its `semantic_id` must equal the key it was fetched by, and the program recomputed from the stored source or IR must have that id (`omega_program_compute_id`) and that `source_or_ir_digest`. Mismatch: `UNVERIFIED_DEPENDENCY`. The locked `receipt` must equal `receipt_id`: else `RECEIPT_HASH_MISMATCH`.
 4. **Taint.** In `omega-build`, a VC that the store marks tainted, or that lists the reserved capability `omega-dev.taint`, is refused: `TAINTED_ARTIFACT`. (ARCH-0029 Decision 5: omega-dev output never enters the store, so this is defence in depth; the reserved capability name is a VC1 proposal, OPEN.)
-5. **Profile.** `verifier_profile` not in the profile table: `UNKNOWN_VERIFIER_PROFILE`. `verifier_version` below the table minimum: `STALE_RECEIPT`.
-6. **Receipt.** Receipt missing from the store: `MISSING_RECEIPT`. Receipt fails rule 1 or rules 3 to 6 of section 5.1: `RECEIPT_HASH_MISMATCH`. Receipt not `PASS` or tier too low: `UNVERIFIED_DEPENDENCY`.
+5. **Profile.** `verifier_profile` not in the profile table: `UNKNOWN_VERIFIER_PROFILE`. `verifier_version` below the table minimum: `VERIFIER_TOO_OLD` (a VC1 addition; ARCH-0029 Decision 9 has no code for it, and an earlier draft of this spec wrongly used `STALE_RECEIPT` for it).
+6. **Receipt.** Receipt missing from the store: `MISSING_RECEIPT`. Receipt fails rule 1, 3, 5 or 6 of section 5.1, or rule 4 for the `semantic_id` (it does not name this program): `RECEIPT_HASH_MISMATCH`. Receipt names this `semantic_id` but not the current `source_or_ir_digest` (it covers an older source: it predates a change to the source it covers, ARCH-0029 Decision 9 code 6): `STALE_RECEIPT`. Receipt not `PASS` or tier too low: `UNVERIFIED_DEPENDENCY`.
 7. **Edges.** Each dependency entry's VC (resolved by steps 2 to 7 with the entry's `semantic_id`, and no lock) must have `contract_id` equal to `required_contract`, else `UNVERIFIED_DEPENDENCY`. A dependency already on the current resolution path: `DEPENDENCY_CYCLE`.
 8. **Declared imports.** Every import the program's source or IR actually makes must be a `dependencies[]` entry; otherwise `UNDECLARED_IMPORT`. This is checked where the program is compiled or verified.
 9. **Closure.** The union of all visited VCs is the transitive closure. A resolution succeeds only if every VC in it passed 2 to 7.
 
 ### 6.1 Resolve refusal codes
 
-`UNVERIFIED_DEPENDENCY`, `MISSING_RECEIPT`, `RECEIPT_HASH_MISMATCH`, `DEPENDENCY_NOT_PINNED`, `DEPENDENCY_CYCLE`, `STALE_RECEIPT`, `UNDECLARED_IMPORT`, `TAINTED_ARTIFACT`, `UNKNOWN_VERIFIER_PROFILE`. They are names, not numbers; a consumer may map them to its own exit codes. Format refusals (section 3.6) also refuse a resolution.
+`UNVERIFIED_DEPENDENCY`, `MISSING_RECEIPT`, `RECEIPT_HASH_MISMATCH`, `DEPENDENCY_NOT_PINNED`, `DEPENDENCY_CYCLE`, `STALE_RECEIPT` (the receipt predates a change to the source it covers), `UNDECLARED_IMPORT`, `TAINTED_ARTIFACT`, `UNKNOWN_VERIFIER_PROFILE` (the nine ARCH-0029 Decision 9 codes, same meanings), plus the VC1 addition `VERIFIER_TOO_OLD`. They are names, not numbers; a consumer may map them to its own exit codes. Format refusals (section 3.6) also refuse a resolution.
 
 ## 7. The two domains
 
@@ -190,11 +193,11 @@ add = semantic 1111111111111111111111111111111111111111111111111111111111111111 
 
 ## 9. Conformance
 
-`golden/expected.txt` has one line per vector: `NAME ACCEPT <vc id hex>` or `NAME REFUSE <CODE>`. `tools/check-golden.sh` regenerates the vectors, runs the C checker (with ASan/UBSan when available), recomputes every ACCEPT id with `sha256sum` (independent of the C code), proves three vector mutants (flip a byte, reorder dependencies, drop the domain tag) are detected, and proves five deliberately broken checker builds all fail the corpus.
+`golden/expected.txt` has one line per vector: `NAME ACCEPT <vc id hex>` or `NAME REFUSE <CODE>`. `tools/check-golden.sh` regenerates the vectors, runs the C checker (with ASan/UBSan when available), recomputes every ACCEPT id with `sha256sum` (independent of the C code), proves three vector mutants (flip a byte, reorder dependencies, drop the domain tag) are detected, and proves nine deliberately broken checker builds (unsorted deps, zero receipt, no domain tag in the hash, duplicates, trailing bytes, zero ids, string bytes, entry count limit, digest kind) all fail the corpus.
 
 | Vector | Result |
 |---|---|
-| `v01_minimal`, `v02_deps`, `v03_capabilities` | ACCEPT with fixed ids |
+| `v01_minimal`, `v02_deps`, `v03_capabilities`, `v04_ir_kind` | ACCEPT with fixed ids (`v04` is `v01` with `digest_kind` 0x02: a different id) |
 | `r01_duplicate_dep` | `DUPLICATE_DEPENDENCY` |
 | `r02_unsorted_deps` | `UNSORTED_DEPENDENCIES` |
 | `r03_zero_receipt_id` | `MISSING_RECEIPT` |
@@ -204,6 +207,10 @@ add = semantic 1111111111111111111111111111111111111111111111111111111111111111 
 | `r07_truncated` | `TRUNCATED` |
 | `r08_bad_domain_tag` | `BAD_DOMAIN_TAG` |
 | `r09_unsorted_exports` | `NONCANONICAL_SET` |
+| `r10_bad_digest_kind` | `BAD_DIGEST_KIND` |
+| `r11_zero_id` | `ZERO_ID` |
+| `r12_bad_string` | `BAD_STRING` |
+| `r13_too_many_entries` | `TOO_MANY_ENTRIES` |
 
 Vector files are lowercase hex, one line, ending in a newline.
 
@@ -214,5 +221,6 @@ Contract 0.1.0. While major is zero, a change to the byte layout, the id derivat
 ## 11. Limits (stated, not hidden)
 
 - `vc1-check` covers format and id only. It does not read lockfiles, stores or receipts, and does not implement BLAKE3, so section 5.1 and section 6 are specified here but not yet executed by any tool. Stages VC1-STORE, VC1-RESOLVE and VC1-CI implement them.
-- Sections 4.2, 4.3, 4.4, 5.1 and the profile table are design proposals awaiting owner agreement.
+- Sections 4.2, 4.4, 5.1 and the profile table are design proposals awaiting owner agreement.
 - Golden ids come from synthetic ids (repeated bytes), not from real programs.
+- `NONCANONICAL_SET` is vectored only for exports (not realizations or capabilities).
