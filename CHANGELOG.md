@@ -22,6 +22,20 @@ VERSIONING.md.
   forged histories, 23 refusal vectors and a join expectation list
   (`vectors/join.txt`). Sources: aien-architecture causal-id-join-v0
   (fa46a26) and resource-contract-v0 (ddc17b7).
+- `specs/verified-crumb`: Verified Crumb V1 (VC1) contract 0.1.0, new. Canonical
+  byte encoding of VerifiedCrumbV1 (big-endian, domain tag
+  `AIEN_VERIFIED_CRUMB_V1`, sorted unique lists, no padding), VC id = SHA-256
+  of the canonical bytes, resolve rule (lock, semantic id, store, identity,
+  receipt, transitive closure, refuse on any failure), 9 resolve refusal codes
+  plus 12 format refusal codes, the omega-dev (tainted) and omega-build
+  (verified only) domains, and the `omega.lock` text format. Receipt id binds
+  to the aien-proof BLAKE3 id. 12 golden vectors (3 accept, 9 refuse), a C
+  checker (`tools/vc1-check.c`), and `tools/check-golden.sh` with 3 vector
+  mutants and 5 checker mutants. No consumer pins it yet. Open design items
+  are listed in SPEC.md sections 4 and 11.
+- `specs/evidence-receipt`: partial extraction of aien-proof EvidenceReceiptV1
+  (`SUBSET.md`): only the identity derivation and fields VC1 binds to,
+  pinned to aien-sovereign-core `40dd373`. Full extraction is owed.
 
 ## [v0.1.0] - 2026-09-23
 
