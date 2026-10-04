@@ -1,8 +1,4 @@
 {
-  "schema_version": "1.0.0",
-  "name": "specs",
-  "layer": "specs",
-  "purpose": "Directory specs. Purpose not yet described by a human.",
   "above": {
     "name": "aien-protocols",
     "path": ".."
@@ -30,10 +26,57 @@
     }
   ],
   "extensions": {
-    "seed": {
-      "purpose_auto": "Directory specs. Purpose not yet described by a human.",
-      "files": []
+    "generated": {
+      "children": [
+        {
+          "digest": "f03a31fe18c2d4256fad8829339610e5d99dbd68b0573d1a030954c0d1e08023",
+          "last_commit": "6df80a6",
+          "name": "agent-state",
+          "purpose": "Directory specs/agent-state. Purpose not yet described by a human."
+        },
+        {
+          "digest": "c43bb65f34fa7e9209ab75bbca3ad145ae4de1ccd0131af5bdb9870427bab0b5",
+          "last_commit": "b50c00d",
+          "name": "crumb-visible",
+          "purpose": "Directory specs/crumb-visible. Purpose not yet described by a human."
+        },
+        {
+          "digest": "cb13339a84bf45a1e728365cb5e8df19361a68553c2634ee313b23095dca0cfe",
+          "last_commit": "6df80a6",
+          "name": "evaluation",
+          "purpose": "Directory specs/evaluation. Purpose not yet described by a human."
+        },
+        {
+          "digest": "a1c4e4655425fe30bdbaecad47180001a2aeb5c4bb9a768a4bfaea07e6e864c2",
+          "last_commit": "4a4877a",
+          "name": "execution-transcript",
+          "purpose": "Directory specs/execution-transcript. Purpose not yet described by a human."
+        },
+        {
+          "digest": "acf91faac152a4cfa7c358382c8e5c025b551e72f01f11f066f21fec7449ef88",
+          "last_commit": "6df80a6",
+          "name": "inference",
+          "purpose": "Directory specs/inference. Purpose not yet described by a human."
+        }
+      ],
+      "children_root": "sha256:789e6d6ae8dd0b7bbd76eefd7c8eb40c8db9a41c9c6b5bf8dc2ed0e8267151b9",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:e1ef3d46a7fe46df35a9cb53ee12cd1655e483aa360d8e7e18d862067d2aaf4a",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 315,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:ef09027d5d1f8577b214f4b1c0468f821867a4adcaea05fe5bcc03fb8a9f7c71"
     },
-    "owner_lane": ""
-  }
+    "owner_lane": "",
+    "seed": {
+      "files": [],
+      "purpose_auto": "Directory specs. Purpose not yet described by a human."
+    }
+  },
+  "layer": "specs",
+  "name": "specs",
+  "purpose": "Directory specs. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

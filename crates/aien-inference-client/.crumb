@@ -1,8 +1,4 @@
 {
-  "schema_version": "1.0.0",
-  "name": "crates/aien-inference-client",
-  "layer": "crates/aien-inference-client",
-  "purpose": "Directory crates/aien-inference-client. Purpose not yet described by a human.",
   "above": {
     "name": "crates",
     "path": ".."
@@ -18,12 +14,41 @@
     }
   ],
   "extensions": {
+    "generated": {
+      "children": [
+        {
+          "digest": "28b203fe2179526ef9786ed72b4c694d910796457784daff5a5ff8eace098fd2",
+          "last_commit": "9e3d8dd",
+          "name": "src",
+          "purpose": "Directory crates/aien-inference-client/src. Purpose not yet described by a human."
+        },
+        {
+          "digest": "172639800facc4b1251284f06e504aa1aa611f71ef1cdbc28daf9694dc13d977",
+          "last_commit": "9e3d8dd",
+          "name": "tests",
+          "purpose": "Directory crates/aien-inference-client/tests. Purpose not yet described by a human."
+        }
+      ],
+      "children_root": "sha256:5021388a1824cafe273a2f2ed76504141bbdccd7d61bf1e368b4875402157aac",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:5e3b3a06492114954e9842705c38f396c379cda087de01372ff3e04e3355f9d7",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 3,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:3f130ee1d1e83c68a9fcce53ce505030d4050e354b28c9a431392b433ab97256"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Directory crates/aien-inference-client. Purpose not yet described by a human.",
       "files": [
         "Cargo.toml"
-      ]
-    },
-    "owner_lane": ""
-  }
+      ],
+      "purpose_auto": "Directory crates/aien-inference-client. Purpose not yet described by a human."
+    }
+  },
+  "layer": "crates/aien-inference-client",
+  "name": "crates/aien-inference-client",
+  "purpose": "Directory crates/aien-inference-client. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

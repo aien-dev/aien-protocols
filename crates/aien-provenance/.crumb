@@ -1,8 +1,4 @@
 {
-  "schema_version": "1.0.0",
-  "name": "crates/aien-provenance",
-  "layer": "crates/aien-provenance",
-  "purpose": "Directory crates/aien-provenance. Purpose not yet described by a human.",
   "above": {
     "name": "crates",
     "path": ".."
@@ -14,12 +10,35 @@
     }
   ],
   "extensions": {
+    "generated": {
+      "children": [
+        {
+          "digest": "aca756ec43741697429f9526ec72fc8edb94cc7b8182bb21b6c96ea7de1eca8c",
+          "last_commit": "9e3d8dd",
+          "name": "src",
+          "purpose": "Directory crates/aien-provenance/src. Purpose not yet described by a human."
+        }
+      ],
+      "children_root": "sha256:648c2e895840962e7ba5227e0fcc9670e1811f0e6d768169512dd653e697e324",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:283e2f63909adef3d8fb877b77125a158f96481c29bd982c26a897981de49f7d",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 2,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:9bdda3326a7fa7a9b06cbd9e3d2c6ac59f82e8025f78f15d16b546750baa0d39"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Directory crates/aien-provenance. Purpose not yet described by a human.",
       "files": [
         "Cargo.toml"
-      ]
-    },
-    "owner_lane": ""
-  }
+      ],
+      "purpose_auto": "Directory crates/aien-provenance. Purpose not yet described by a human."
+    }
+  },
+  "layer": "crates/aien-provenance",
+  "name": "crates/aien-provenance",
+  "purpose": "Directory crates/aien-provenance. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

@@ -1,8 +1,4 @@
 {
-  "schema_version": "1.0.0",
-  "name": "crates",
-  "layer": "crates",
-  "purpose": "Directory crates. Purpose not yet described by a human.",
   "above": {
     "name": "aien-protocols",
     "path": ".."
@@ -46,10 +42,81 @@
     }
   ],
   "extensions": {
-    "seed": {
-      "purpose_auto": "Directory crates. Purpose not yet described by a human.",
-      "files": []
+    "generated": {
+      "children": [
+        {
+          "digest": "7586e16f4992c7ecb9c1a43ab0a706bfe274b79c3d1f72192c2deb1a80e9f47a",
+          "last_commit": "6df80a6",
+          "name": "aien-action-protocol",
+          "purpose": "Directory crates/aien-action-protocol. Purpose not yet described by a human."
+        },
+        {
+          "digest": "41f8bf56343a94decbc2f13c4c24c671d6857c387ce6552c3a21d95013b1a4e7",
+          "last_commit": "9e3d8dd",
+          "name": "aien-agent-state-abi",
+          "purpose": "Directory crates/aien-agent-state-abi. Purpose not yet described by a human."
+        },
+        {
+          "digest": "c1067785a025ce710e16aebf761ebf0743d0aa84e58c68a6c91d11e3362250ed",
+          "last_commit": "9e3d8dd",
+          "name": "aien-evaluation-protocol",
+          "purpose": "Directory crates/aien-evaluation-protocol. Purpose not yet described by a human."
+        },
+        {
+          "digest": "fc1dd7dbedff83f3bcd89fa3dae12a2db1222fe8a85a19bd3ed9fc2aa842ce7e",
+          "last_commit": "6df80a6",
+          "name": "aien-event-protocol",
+          "purpose": "Directory crates/aien-event-protocol. Purpose not yet described by a human."
+        },
+        {
+          "digest": "5e3b3a06492114954e9842705c38f396c379cda087de01372ff3e04e3355f9d7",
+          "last_commit": "9e3d8dd",
+          "name": "aien-inference-client",
+          "purpose": "Directory crates/aien-inference-client. Purpose not yet described by a human."
+        },
+        {
+          "digest": "5580581ca2a95550583e00c3c9b77b04246135d6c5558390fe98ec83e75d22e4",
+          "last_commit": "9e3d8dd",
+          "name": "aien-inference-protocol",
+          "purpose": "Directory crates/aien-inference-protocol. Purpose not yet described by a human."
+        },
+        {
+          "digest": "799e00109c8e7b1ade36d46cf23b0fc484ab1d0926baaed4163d4d3ad405aab3",
+          "last_commit": "1a197e5",
+          "name": "aien-probe",
+          "purpose": "Directory crates/aien-probe. Purpose not yet described by a human."
+        },
+        {
+          "digest": "37ed3e9143a7b4d9f5d972b355b62b4e057d8dd1122bb86c5de12a9d801210fc",
+          "last_commit": "6df80a6",
+          "name": "aien-protocol-types",
+          "purpose": "Directory crates/aien-protocol-types. Purpose not yet described by a human."
+        },
+        {
+          "digest": "283e2f63909adef3d8fb877b77125a158f96481c29bd982c26a897981de49f7d",
+          "last_commit": "9e3d8dd",
+          "name": "aien-provenance",
+          "purpose": "Directory crates/aien-provenance. Purpose not yet described by a human."
+        }
+      ],
+      "children_root": "sha256:0e92d63850c28c6760881c9daee826f9a4a74ed48dd1bf30143cad2b67daa79d",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:fd1e6346521a5aaf8e6d283c6d63505a20b154490077dca898118f11e052b5e3",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 26,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:0a9a82f1bb307c01316b470b36dd9398413781efb207ebc9f87cefaecb00bc04"
     },
-    "owner_lane": ""
-  }
+    "owner_lane": "",
+    "seed": {
+      "files": [],
+      "purpose_auto": "Directory crates. Purpose not yet described by a human."
+    }
+  },
+  "layer": "crates",
+  "name": "crates",
+  "purpose": "Directory crates. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

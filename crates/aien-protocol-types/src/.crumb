@@ -1,19 +1,31 @@
 {
-  "schema_version": "1.0.0",
-  "name": "crates/aien-protocol-types/src",
-  "layer": "crates/aien-protocol-types/src",
-  "purpose": "Directory crates/aien-protocol-types/src. Purpose not yet described by a human.",
   "above": {
     "name": "crates/aien-protocol-types",
     "path": ".."
   },
   "extensions": {
+    "generated": {
+      "children": [],
+      "children_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:8a8a002d99516bf3c7282237e301767e9ce13e1ede6aae03a0e36ac06f6fd99a",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 1,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:a85b9543a8486a26cfce79a9a3e20b971506552aeaae29dfae1a89eb60e7874d"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Directory crates/aien-protocol-types/src. Purpose not yet described by a human.",
       "files": [
         "lib.rs"
-      ]
-    },
-    "owner_lane": ""
-  }
+      ],
+      "purpose_auto": "Directory crates/aien-protocol-types/src. Purpose not yet described by a human."
+    }
+  },
+  "layer": "crates/aien-protocol-types/src",
+  "name": "crates/aien-protocol-types/src",
+  "purpose": "Directory crates/aien-protocol-types/src. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

@@ -1,8 +1,4 @@
 {
-  "schema_version": "1.0.0",
-  "name": "crates/aien-inference-protocol",
-  "layer": "crates/aien-inference-protocol",
-  "purpose": "Directory crates/aien-inference-protocol. Purpose not yet described by a human.",
   "above": {
     "name": "crates",
     "path": ".."
@@ -14,12 +10,35 @@
     }
   ],
   "extensions": {
+    "generated": {
+      "children": [
+        {
+          "digest": "f5416e33c08744994204ebdc716968d06fd4d191170395543009fda6384aacce",
+          "last_commit": "9e3d8dd",
+          "name": "src",
+          "purpose": "Directory crates/aien-inference-protocol/src. Purpose not yet described by a human."
+        }
+      ],
+      "children_root": "sha256:4177819224f4f88d23858dd456840e3cc54adde07fc830a4d8ac0cf9d106f93b",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:5580581ca2a95550583e00c3c9b77b04246135d6c5558390fe98ec83e75d22e4",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 2,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:a1d5ccdae16b77de6c4f251a8b8fc220eb954b8b2a0f3ecbf8fa852de737aed6"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Directory crates/aien-inference-protocol. Purpose not yet described by a human.",
       "files": [
         "Cargo.toml"
-      ]
-    },
-    "owner_lane": ""
-  }
+      ],
+      "purpose_auto": "Directory crates/aien-inference-protocol. Purpose not yet described by a human."
+    }
+  },
+  "layer": "crates/aien-inference-protocol",
+  "name": "crates/aien-inference-protocol",
+  "purpose": "Directory crates/aien-inference-protocol. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

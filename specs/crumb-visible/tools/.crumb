@@ -1,19 +1,31 @@
 {
-  "schema_version": "1.0.0",
-  "name": "specs/crumb-visible/tools",
-  "layer": "specs/crumb-visible/tools",
-  "purpose": "Directory specs/crumb-visible/tools. Purpose not yet described by a human.",
   "above": {
     "name": "specs/crumb-visible",
     "path": ".."
   },
   "extensions": {
+    "generated": {
+      "children": [],
+      "children_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:0a8c90afe59f24c6629de661db9db3f69a420d857afaf4323dfccc98073cd17a",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 1,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:850878110e835211eca35c029328c83b9f9e23e012bd263c032faa32b7257201"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Directory specs/crumb-visible/tools. Purpose not yet described by a human.",
       "files": [
         "make-vectors.sh"
-      ]
-    },
-    "owner_lane": ""
-  }
+      ],
+      "purpose_auto": "Directory specs/crumb-visible/tools. Purpose not yet described by a human."
+    }
+  },
+  "layer": "specs/crumb-visible/tools",
+  "name": "specs/crumb-visible/tools",
+  "purpose": "Directory specs/crumb-visible/tools. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

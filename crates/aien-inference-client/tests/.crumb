@@ -1,19 +1,31 @@
 {
-  "schema_version": "1.0.0",
-  "name": "crates/aien-inference-client/tests",
-  "layer": "crates/aien-inference-client/tests",
-  "purpose": "Directory crates/aien-inference-client/tests. Purpose not yet described by a human.",
   "above": {
     "name": "crates/aien-inference-client",
     "path": ".."
   },
   "extensions": {
+    "generated": {
+      "children": [],
+      "children_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:172639800facc4b1251284f06e504aa1aa611f71ef1cdbc28daf9694dc13d977",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 1,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:cbd420cf66bec342499baa1501b1ee206b4c2c514a2da19129590ef393c6a788"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Directory crates/aien-inference-client/tests. Purpose not yet described by a human.",
       "files": [
         "http_client_tests.rs"
-      ]
-    },
-    "owner_lane": ""
-  }
+      ],
+      "purpose_auto": "Directory crates/aien-inference-client/tests. Purpose not yet described by a human."
+    }
+  },
+  "layer": "crates/aien-inference-client/tests",
+  "name": "crates/aien-inference-client/tests",
+  "purpose": "Directory crates/aien-inference-client/tests. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

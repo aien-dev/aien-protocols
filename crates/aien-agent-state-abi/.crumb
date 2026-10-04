@@ -1,8 +1,4 @@
 {
-  "schema_version": "1.0.0",
-  "name": "crates/aien-agent-state-abi",
-  "layer": "crates/aien-agent-state-abi",
-  "purpose": "Directory crates/aien-agent-state-abi. Purpose not yet described by a human.",
   "above": {
     "name": "crates",
     "path": ".."
@@ -18,12 +14,41 @@
     }
   ],
   "extensions": {
+    "generated": {
+      "children": [
+        {
+          "digest": "a487bf45451672772038b9623933ef41db11230050c6c1f24c5618895edab85d",
+          "last_commit": "6df80a6",
+          "name": "src",
+          "purpose": "Directory crates/aien-agent-state-abi/src. Purpose not yet described by a human."
+        },
+        {
+          "digest": "849316cf7eafc05ad27b43ce33fc7113e2c68706389ea91fbe9bf192dd31b878",
+          "last_commit": "9e3d8dd",
+          "name": "tests",
+          "purpose": "Directory crates/aien-agent-state-abi/tests. Purpose not yet described by a human."
+        }
+      ],
+      "children_root": "sha256:0d43a4aff871cb77061c22ca87c96d9146559e19626da19a359647fce9d43ffe",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:41f8bf56343a94decbc2f13c4c24c671d6857c387ce6552c3a21d95013b1a4e7",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 3,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:6cfb4e9f37a590a3f8c575b14b9096e68adf678ee06dc60e358ebbd8392fed6a"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Directory crates/aien-agent-state-abi. Purpose not yet described by a human.",
       "files": [
         "Cargo.toml"
-      ]
-    },
-    "owner_lane": ""
-  }
+      ],
+      "purpose_auto": "Directory crates/aien-agent-state-abi. Purpose not yet described by a human."
+    }
+  },
+  "layer": "crates/aien-agent-state-abi",
+  "name": "crates/aien-agent-state-abi",
+  "purpose": "Directory crates/aien-agent-state-abi. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

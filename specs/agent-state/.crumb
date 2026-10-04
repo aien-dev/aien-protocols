@@ -1,19 +1,31 @@
 {
-  "schema_version": "1.0.0",
-  "name": "specs/agent-state",
-  "layer": "specs/agent-state",
-  "purpose": "Directory specs/agent-state. Purpose not yet described by a human.",
   "above": {
     "name": "specs",
     "path": ".."
   },
   "extensions": {
+    "generated": {
+      "children": [],
+      "children_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:f03a31fe18c2d4256fad8829339610e5d99dbd68b0573d1a030954c0d1e08023",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 1,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:58f6c6dbb619fe0ea0769bc9bb04fcb443ce28a5a53ad757a8a7576834f8fc67"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Directory specs/agent-state. Purpose not yet described by a human.",
       "files": [
         "SPEC.md"
-      ]
-    },
-    "owner_lane": ""
-  }
+      ],
+      "purpose_auto": "Directory specs/agent-state. Purpose not yet described by a human."
+    }
+  },
+  "layer": "specs/agent-state",
+  "name": "specs/agent-state",
+  "purpose": "Directory specs/agent-state. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

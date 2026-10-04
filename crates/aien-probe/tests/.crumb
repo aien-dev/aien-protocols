@@ -1,19 +1,31 @@
 {
-  "schema_version": "1.0.0",
-  "name": "crates/aien-probe/tests",
-  "layer": "crates/aien-probe/tests",
-  "purpose": "Directory crates/aien-probe/tests. Purpose not yet described by a human.",
   "above": {
     "name": "crates/aien-probe",
     "path": ".."
   },
   "extensions": {
+    "generated": {
+      "children": [],
+      "children_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:985069c97d0ebe16ca1a55f08ad70330ecf003fbd1b1bececbb2145e278943b6",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 1,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:a65c99b6602d47ec6bc10ef5ab859a27d6b9c2325c1276c3f7b5300bd0cf5e8b"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Directory crates/aien-probe/tests. Purpose not yet described by a human.",
       "files": [
         "probe_engine_tests.rs"
-      ]
-    },
-    "owner_lane": ""
-  }
+      ],
+      "purpose_auto": "Directory crates/aien-probe/tests. Purpose not yet described by a human."
+    }
+  },
+  "layer": "crates/aien-probe/tests",
+  "name": "crates/aien-probe/tests",
+  "purpose": "Directory crates/aien-probe/tests. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }
