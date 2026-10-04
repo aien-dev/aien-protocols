@@ -1,15 +1,23 @@
 {
-  "schema_version": "1.0.0",
-  "name": "specs/crumb-visible/vectors",
-  "layer": "specs/crumb-visible/vectors",
-  "purpose": "Directory specs/crumb-visible/vectors. Purpose not yet described by a human.",
   "above": {
     "name": "specs/crumb-visible",
     "path": ".."
   },
   "extensions": {
+    "generated": {
+      "children": [],
+      "children_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:9c9722cbf8340ad1c453a780adeb4c465f061bf5dedfb1043fd734d803856d0d",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 173,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:63cb82a38b0349cd32464ebcd4a5ab0333480f57d6e4047769f58dcd055b82f5"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Directory specs/crumb-visible/vectors. Purpose not yet described by a human.",
       "files": [
         "expected.txt",
         "p001.crb",
@@ -61,8 +69,12 @@
         "r042.crb",
         "r043.crb",
         "r044.crb"
-      ]
-    },
-    "owner_lane": ""
-  }
+      ],
+      "purpose_auto": "Directory specs/crumb-visible/vectors. Purpose not yet described by a human."
+    }
+  },
+  "layer": "specs/crumb-visible/vectors",
+  "name": "specs/crumb-visible/vectors",
+  "purpose": "Directory specs/crumb-visible/vectors. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

@@ -1,8 +1,4 @@
 {
-  "schema_version": "1.0.0",
-  "name": "crates/aien-event-protocol",
-  "layer": "crates/aien-event-protocol",
-  "purpose": "Directory crates/aien-event-protocol. Purpose not yet described by a human.",
   "above": {
     "name": "crates",
     "path": ".."
@@ -14,12 +10,35 @@
     }
   ],
   "extensions": {
+    "generated": {
+      "children": [
+        {
+          "digest": "d886814c0e2775f553fee4c4411e91199012a98dc36f910db667a50591469b3f",
+          "last_commit": "6df80a6",
+          "name": "src",
+          "purpose": "Directory crates/aien-event-protocol/src. Purpose not yet described by a human."
+        }
+      ],
+      "children_root": "sha256:6b65bbad922756c140abf2421e8250ff1efe4ee69c27a8e9ca49e6073f98173b",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:fc1dd7dbedff83f3bcd89fa3dae12a2db1222fe8a85a19bd3ed9fc2aa842ce7e",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 2,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:b8b8e7304bca707eee97d8d0228070ba4004eeb9f640d06e81d40771591a3b14"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Directory crates/aien-event-protocol. Purpose not yet described by a human.",
       "files": [
         "Cargo.toml"
-      ]
-    },
-    "owner_lane": ""
-  }
+      ],
+      "purpose_auto": "Directory crates/aien-event-protocol. Purpose not yet described by a human."
+    }
+  },
+  "layer": "crates/aien-event-protocol",
+  "name": "crates/aien-event-protocol",
+  "purpose": "Directory crates/aien-event-protocol. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

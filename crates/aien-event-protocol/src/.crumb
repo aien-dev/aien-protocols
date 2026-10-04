@@ -1,19 +1,31 @@
 {
-  "schema_version": "1.0.0",
-  "name": "crates/aien-event-protocol/src",
-  "layer": "crates/aien-event-protocol/src",
-  "purpose": "Directory crates/aien-event-protocol/src. Purpose not yet described by a human.",
   "above": {
     "name": "crates/aien-event-protocol",
     "path": ".."
   },
   "extensions": {
+    "generated": {
+      "children": [],
+      "children_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:d886814c0e2775f553fee4c4411e91199012a98dc36f910db667a50591469b3f",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 1,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:68dc81ef42cd83f60402991bda32d9adef1791c45ea2adb7d1ba0a723cabac9d"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Directory crates/aien-event-protocol/src. Purpose not yet described by a human.",
       "files": [
         "lib.rs"
-      ]
-    },
-    "owner_lane": ""
-  }
+      ],
+      "purpose_auto": "Directory crates/aien-event-protocol/src. Purpose not yet described by a human."
+    }
+  },
+  "layer": "crates/aien-event-protocol/src",
+  "name": "crates/aien-event-protocol/src",
+  "purpose": "Directory crates/aien-event-protocol/src. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

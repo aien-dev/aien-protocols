@@ -1,8 +1,4 @@
 {
-  "schema_version": "1.0.0",
-  "name": "aien-protocols",
-  "layer": "root",
-  "purpose": "Repository root aien-protocols. Purpose not yet described by a human.",
   "below": [
     {
       "name": "crates",
@@ -14,8 +10,33 @@
     }
   ],
   "extensions": {
+    "generated": {
+      "children": [
+        {
+          "digest": "fd1e6346521a5aaf8e6d283c6d63505a20b154490077dca898118f11e052b5e3",
+          "last_commit": "1a197e5",
+          "name": "crates",
+          "purpose": "Directory crates. Purpose not yet described by a human."
+        },
+        {
+          "digest": "e1ef3d46a7fe46df35a9cb53ee12cd1655e483aa360d8e7e18d862067d2aaf4a",
+          "last_commit": "89d9153",
+          "name": "specs",
+          "purpose": "Directory specs. Purpose not yet described by a human."
+        }
+      ],
+      "children_root": "sha256:fe8bcc69c04dbe36a14ec08289d04d616b09a085665fb96f0d43dbd444548ff1",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:c0ff200e5e5ecb558d947b0226491e1761136e09dbb64eeb84166cdfbc40cc37",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 356,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:f73d1f4f2df2891b36373654930b645a25578a7053ba2d95d461f1c4850125ef"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Repository root aien-protocols. Purpose not yet described by a human.",
       "files": [
         "ANTI_ENCLOSURE.md",
         "CHANGELOG.md",
@@ -32,11 +53,15 @@
         "VERSIONING.md"
       ],
       "git": {
-        "remote": "git@github.com:aien-dev/aien-protocols.git",
         "branch": "hardening/LB-trn1-transcript",
-        "head": "1c70ac4"
-      }
-    },
-    "owner_lane": ""
-  }
+        "head": "1c70ac4",
+        "remote": "git@github.com:aien-dev/aien-protocols.git"
+      },
+      "purpose_auto": "Repository root aien-protocols. Purpose not yet described by a human."
+    }
+  },
+  "layer": "root",
+  "name": "aien-protocols",
+  "purpose": "Repository root aien-protocols. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

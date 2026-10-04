@@ -2,7 +2,7 @@
 name = "aien-inference-protocol"
 version = "0.1.0"
 edition = "2021"
-license = "Apache-2.0"
+license = "AGPL-3.0-or-later"
 description = "Inference execution contract, leased KV pinning, and copy-on-write context branching"
 
 [dependencies]

@@ -1,19 +1,31 @@
 {
-  "schema_version": "1.0.0",
-  "name": "crates/aien-provenance/src",
-  "layer": "crates/aien-provenance/src",
-  "purpose": "Directory crates/aien-provenance/src. Purpose not yet described by a human.",
   "above": {
     "name": "crates/aien-provenance",
     "path": ".."
   },
   "extensions": {
+    "generated": {
+      "children": [],
+      "children_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:aca756ec43741697429f9526ec72fc8edb94cc7b8182bb21b6c96ea7de1eca8c",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 1,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:cf3ae3a2f028031b624275aa56a178cd2d9e92d543d705b2c20fdf403607e12a"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Directory crates/aien-provenance/src. Purpose not yet described by a human.",
       "files": [
         "lib.rs"
-      ]
-    },
-    "owner_lane": ""
-  }
+      ],
+      "purpose_auto": "Directory crates/aien-provenance/src. Purpose not yet described by a human."
+    }
+  },
+  "layer": "crates/aien-provenance/src",
+  "name": "crates/aien-provenance/src",
+  "purpose": "Directory crates/aien-provenance/src. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

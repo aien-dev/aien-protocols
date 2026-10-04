@@ -1,19 +1,31 @@
 {
-  "schema_version": "1.0.0",
-  "name": "crates/aien-agent-state-abi/tests",
-  "layer": "crates/aien-agent-state-abi/tests",
-  "purpose": "Directory crates/aien-agent-state-abi/tests. Purpose not yet described by a human.",
   "above": {
     "name": "crates/aien-agent-state-abi",
     "path": ".."
   },
   "extensions": {
+    "generated": {
+      "children": [],
+      "children_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:849316cf7eafc05ad27b43ce33fc7113e2c68706389ea91fbe9bf192dd31b878",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 1,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:94945464e104c1b5326fdb59f55b24e805e80f28e4a9ff8a04bc151fd477b0d7"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Directory crates/aien-agent-state-abi/tests. Purpose not yet described by a human.",
       "files": [
         "integration_tests.rs"
-      ]
-    },
-    "owner_lane": ""
-  }
+      ],
+      "purpose_auto": "Directory crates/aien-agent-state-abi/tests. Purpose not yet described by a human."
+    }
+  },
+  "layer": "crates/aien-agent-state-abi/tests",
+  "name": "crates/aien-agent-state-abi/tests",
+  "purpose": "Directory crates/aien-agent-state-abi/tests. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

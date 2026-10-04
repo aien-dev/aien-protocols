@@ -1,8 +1,4 @@
 {
-  "schema_version": "1.0.0",
-  "name": "crates/aien-evaluation-protocol",
-  "layer": "crates/aien-evaluation-protocol",
-  "purpose": "Directory crates/aien-evaluation-protocol. Purpose not yet described by a human.",
   "above": {
     "name": "crates",
     "path": ".."
@@ -18,12 +14,41 @@
     }
   ],
   "extensions": {
+    "generated": {
+      "children": [
+        {
+          "digest": "16e29e1d31151dcc29c0cdf4ca0e4cbe30a7c505f0a0732a4af1699e495c203e",
+          "last_commit": "9e3d8dd",
+          "name": "src",
+          "purpose": "Directory crates/aien-evaluation-protocol/src. Purpose not yet described by a human."
+        },
+        {
+          "digest": "4c0e8c0d792f5d8ea4a1e9d3e41b39aba22d6c30b5daf7af3647f9ef70c0f54a",
+          "last_commit": "9e3d8dd",
+          "name": "tests",
+          "purpose": "Directory crates/aien-evaluation-protocol/tests. Purpose not yet described by a human."
+        }
+      ],
+      "children_root": "sha256:91daef1adc21d78ecf97950e14a24123159e75e898bb74b035d5c30b8696e815",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:c1067785a025ce710e16aebf761ebf0743d0aa84e58c68a6c91d11e3362250ed",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 3,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:d9ba702d3d93bccbb1c978990faf726c8fe77aa515c784fcf0edff2808185fe2"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Directory crates/aien-evaluation-protocol. Purpose not yet described by a human.",
       "files": [
         "Cargo.toml"
-      ]
-    },
-    "owner_lane": ""
-  }
+      ],
+      "purpose_auto": "Directory crates/aien-evaluation-protocol. Purpose not yet described by a human."
+    }
+  },
+  "layer": "crates/aien-evaluation-protocol",
+  "name": "crates/aien-evaluation-protocol",
+  "purpose": "Directory crates/aien-evaluation-protocol. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

@@ -4,7 +4,7 @@ Versioned specifications and reference crates for AIEN: what portable agent stat
 
 ## Current state
 
-Research-grade and pre-alpha. The specifications and reference Rust crates (Apache-2.0) in this repository predate the project's decision to target C. The reference crates are legacy: no new Rust is added, and the specifications are the durable part. Language-neutral C implementations will live with their owners (omega, aienos). Status of the whole system is owned by [aien-architecture](https://github.com/aien-dev/aien-architecture): [CURRENT_EXECUTION_PLAN.md](https://github.com/aien-dev/aien-architecture/blob/main/CURRENT_EXECUTION_PLAN.md). No protocol here is claimed as qualified on hardware.
+Research-grade and pre-alpha. The specifications and reference Rust crates (AGPL-3.0-or-later) in this repository predate the project's decision to target C. The reference crates are legacy: no new Rust is added, and the specifications are the durable part. Language-neutral C implementations will live with their owners (omega, aienos). Status of the whole system is owned by [aien-architecture](https://github.com/aien-dev/aien-architecture): [CURRENT_EXECUTION_PLAN.md](https://github.com/aien-dev/aien-architecture/blob/main/CURRENT_EXECUTION_PLAN.md). No protocol here is claimed as qualified on hardware.
 
 ## Layout
 
@@ -12,7 +12,7 @@ Research-grade and pre-alpha. The specifications and reference Rust crates (Apac
 specs/       Normative specifications (Community Specification License 1.0):
              agent-state, inference, evaluation, crumb-visible, execution-transcript,
              evidence-receipt (partial), verified-crumb
-crates/      Reference Rust crates (Apache-2.0), legacy:
+crates/      Reference Rust crates (AGPL-3.0-or-later), legacy:
              aien-protocol-types, aien-agent-state-abi, aien-inference-protocol,
              aien-inference-client, aien-action-protocol, aien-event-protocol,
              aien-evaluation-protocol, aien-provenance, aien-probe
@@ -47,4 +47,4 @@ Open a pull request against `main` with the commands you ran and their output. S
 
 ## Licensing
 
-Specifications: [Community Specification License 1.0](LICENSE-SPEC). Code and crates: [Apache License 2.0](LICENSE-CODE). Anti-enclosure commitments: [ANTI_ENCLOSURE.md](ANTI_ENCLOSURE.md).
+Specifications: [Community Specification License 1.0](LICENSE-SPEC). Code and crates: [GNU Affero General Public License v3.0 or later](LICENSE-CODE) (AGPL-3.0-or-later). Anti-enclosure commitments: [ANTI_ENCLOSURE.md](ANTI_ENCLOSURE.md).

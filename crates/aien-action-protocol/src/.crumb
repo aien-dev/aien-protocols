@@ -1,19 +1,31 @@
 {
-  "schema_version": "1.0.0",
-  "name": "crates/aien-action-protocol/src",
-  "layer": "crates/aien-action-protocol/src",
-  "purpose": "Directory crates/aien-action-protocol/src. Purpose not yet described by a human.",
   "above": {
     "name": "crates/aien-action-protocol",
     "path": ".."
   },
   "extensions": {
+    "generated": {
+      "children": [],
+      "children_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:a88f9c18ffdd3662f180ae7d95891f32ed09bdb4a0e04b228d1b4f87d097a057",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 1,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:c9b0a10c70aa5e1c75417334f9f269f3cc99b379158ce744cc41e25c13fc4173"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Directory crates/aien-action-protocol/src. Purpose not yet described by a human.",
       "files": [
         "lib.rs"
-      ]
-    },
-    "owner_lane": ""
-  }
+      ],
+      "purpose_auto": "Directory crates/aien-action-protocol/src. Purpose not yet described by a human."
+    }
+  },
+  "layer": "crates/aien-action-protocol/src",
+  "name": "crates/aien-action-protocol/src",
+  "purpose": "Directory crates/aien-action-protocol/src. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

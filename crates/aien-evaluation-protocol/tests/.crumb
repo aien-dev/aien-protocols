@@ -1,19 +1,31 @@
 {
-  "schema_version": "1.0.0",
-  "name": "crates/aien-evaluation-protocol/tests",
-  "layer": "crates/aien-evaluation-protocol/tests",
-  "purpose": "Directory crates/aien-evaluation-protocol/tests. Purpose not yet described by a human.",
   "above": {
     "name": "crates/aien-evaluation-protocol",
     "path": ".."
   },
   "extensions": {
+    "generated": {
+      "children": [],
+      "children_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:4c0e8c0d792f5d8ea4a1e9d3e41b39aba22d6c30b5daf7af3647f9ef70c0f54a",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 1,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:31734eb5a73f785e03ce7e7ae6595f11c61a6e6a556a8ce5ad03ed2e6ffcde69"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Directory crates/aien-evaluation-protocol/tests. Purpose not yet described by a human.",
       "files": [
         "evaluator_protocol_tests.rs"
-      ]
-    },
-    "owner_lane": ""
-  }
+      ],
+      "purpose_auto": "Directory crates/aien-evaluation-protocol/tests. Purpose not yet described by a human."
+    }
+  },
+  "layer": "crates/aien-evaluation-protocol/tests",
+  "name": "crates/aien-evaluation-protocol/tests",
+  "purpose": "Directory crates/aien-evaluation-protocol/tests. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

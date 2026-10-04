@@ -2,7 +2,7 @@
 name = "aien-evaluation-protocol"
 version = "0.1.0"
 edition = "2021"
-license = "Apache-2.0"
+license = "AGPL-3.0-or-later"
 description = "Unified Evaluator Protocol, verifier attestations, and immutable evaluation receipts"
 
 [dependencies]

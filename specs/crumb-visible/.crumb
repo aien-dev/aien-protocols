@@ -1,8 +1,4 @@
 {
-  "schema_version": "1.0.0",
-  "name": "specs/crumb-visible",
-  "layer": "specs/crumb-visible",
-  "purpose": "Directory specs/crumb-visible. Purpose not yet described by a human.",
   "above": {
     "name": "specs",
     "path": ".."
@@ -18,12 +14,41 @@
     }
   ],
   "extensions": {
+    "generated": {
+      "children": [
+        {
+          "digest": "0a8c90afe59f24c6629de661db9db3f69a420d857afaf4323dfccc98073cd17a",
+          "last_commit": "b50c00d",
+          "name": "tools",
+          "purpose": "Directory specs/crumb-visible/tools. Purpose not yet described by a human."
+        },
+        {
+          "digest": "9c9722cbf8340ad1c453a780adeb4c465f061bf5dedfb1043fd734d803856d0d",
+          "last_commit": "b50c00d",
+          "name": "vectors",
+          "purpose": "Directory specs/crumb-visible/vectors. Purpose not yet described by a human."
+        }
+      ],
+      "children_root": "sha256:e1f480051f6c54341927e62436b32b4241cfc5806a888e56587117e688fba818",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:c43bb65f34fa7e9209ab75bbca3ad145ae4de1ccd0131af5bdb9870427bab0b5",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 175,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:15d424b982cd163fa4cbc3b7317dcecf000e92ed47806bc3389c129fac5f7e0a"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Directory specs/crumb-visible. Purpose not yet described by a human.",
       "files": [
         "CRUMB_READER_CONTRACT.md"
-      ]
-    },
-    "owner_lane": ""
-  }
+      ],
+      "purpose_auto": "Directory specs/crumb-visible. Purpose not yet described by a human."
+    }
+  },
+  "layer": "specs/crumb-visible",
+  "name": "specs/crumb-visible",
+  "purpose": "Directory specs/crumb-visible. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

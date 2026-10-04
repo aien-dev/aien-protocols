@@ -1,19 +1,31 @@
 {
-  "schema_version": "1.0.0",
-  "name": "specs/evaluation",
-  "layer": "specs/evaluation",
-  "purpose": "Directory specs/evaluation. Purpose not yet described by a human.",
   "above": {
     "name": "specs",
     "path": ".."
   },
   "extensions": {
+    "generated": {
+      "children": [],
+      "children_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compiled_at": "2026-10-04T18:15:53Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:cb13339a84bf45a1e728365cb5e8df19361a68553c2634ee313b23095dca0cfe",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 1,
+      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "source_tree": "sha256:2818457717cd2683c86e84b520419927d8eddb96711aea12bb47ee4d879b7140"
+    },
+    "owner_lane": "",
     "seed": {
-      "purpose_auto": "Directory specs/evaluation. Purpose not yet described by a human.",
       "files": [
         "SPEC.md"
-      ]
-    },
-    "owner_lane": ""
-  }
+      ],
+      "purpose_auto": "Directory specs/evaluation. Purpose not yet described by a human."
+    }
+  },
+  "layer": "specs/evaluation",
+  "name": "specs/evaluation",
+  "purpose": "Directory specs/evaluation. Purpose not yet described by a human.",
+  "schema_version": "1.0.0"
 }

@@ -2,7 +2,7 @@
 name = "aien-probe"
 version = "0.1.0"
 edition = "2021"
-license = "Apache-2.0"
+license = "AGPL-3.0-or-later"
 description = "Sovereign native probe evaluation engine for calibrated non-generative judgments over JSON state"
 
 [dependencies]
