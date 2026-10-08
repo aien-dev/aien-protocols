@@ -1,8 +1,8 @@
 # vector mode domains anchors verdict   (anchors: T TEST anchor present, O OWNER anchor present, - none)
-a01_valid_min.unit qualification 1 T ACCEPT unit_id=084803c232dc44effcc44704c9ed0600dec1231451e0b76693633e98a48d1a1d
-a02_valid_caps_kernel_domain.unit qualification 1 T ACCEPT unit_id=084803c232dc44effcc44704c9ed0600dec1231451e0b76693633e98a48d1a1d
-a03_valid_hosted_domain.unit qualification 1,2 T ACCEPT unit_id=084803c232dc44effcc44704c9ed0600dec1231451e0b76693633e98a48d1a1d
-a04_valid_owner_class.unit release 1 O ACCEPT unit_id=084803c232dc44effcc44704c9ed0600dec1231451e0b76693633e98a48d1a1d
+a01_valid_min.unit qualification 1 T ACCEPT unit_digest=c21c7d9b92433f29d588bd14eab2be4754fe39c05c7a926f1cb29b4388c68787 program_id=084803c232dc44effcc44704c9ed0600dec1231451e0b76693633e98a48d1a1d
+a02_valid_caps_kernel_domain.unit qualification 1 T ACCEPT unit_digest=80a35e189253582322cd94ebbacf15c4e8fc48545fd5ee932c6d2af4386ddbfe program_id=084803c232dc44effcc44704c9ed0600dec1231451e0b76693633e98a48d1a1d
+a03_valid_hosted_domain.unit qualification 1,2 T ACCEPT unit_digest=0c77186537f7cee304a898849b07f77426b1fe103f4adbd67f533c73b5aee8c4 program_id=084803c232dc44effcc44704c9ed0600dec1231451e0b76693633e98a48d1a1d
+a04_valid_owner_class.unit release 1 O ACCEPT unit_digest=4340f53bb068015385b24114f89ffc4e584bc12afbd7afe3a7de12a60ba3b19d program_id=084803c232dc44effcc44704c9ed0600dec1231451e0b76693633e98a48d1a1d
 r01_bad_magic.unit qualification 1 T REFUSED BAD_MAGIC 2
 r02_container_version_2.unit qualification 1 T REFUSED CONTAINER_VERSION 3
 r03_unit_format_6.unit qualification 1 T REFUSED UNIT_FORMAT 5
@@ -25,3 +25,9 @@ r19_test_signer_release.unit release 1 T REFUSED TEST_SIGNER_IN_RELEASE 24
 r20_domain_unsupported.unit qualification 1 T REFUSED CAP_DOMAIN_UNSUPPORTED 27
 r21_untrusted_owner_signer.unit release 1 - REFUSED UNTRUSTED_SIGNER 25
 r22_trailing_byte.unit qualification 1 T REFUSED TRAILING_BYTES 8
+r23_entry_name_charset.unit qualification 1 T REFUSED ENTRY_NAME 31
+r24_entry_name_empty.unit qualification 1 T REFUSED ENTRY_NAME 31
+r25_entry_name_too_long.unit qualification 1 T REFUSED ENTRY_NAME 31
+r26_entry_name_padding.unit qualification 1 T REFUSED ENTRY_NAME 31
+r27_entry_name_duplicate.unit qualification 1 T REFUSED ENTRY_NAME_DUPLICATE 33
+r28_entry_hash_shared_other_name.unit qualification 1 T REFUSED ENTRY_NAME_HASH 32

@@ -3,13 +3,14 @@
 # container v1 (../OSC_UNIT_ARTIFACT.md section 8). Shell, xxd, sha256sum and
 # openssl (Ed25519) only. No Python.
 #
-# Usage: osc-unit-check.sh UNIT MODE DOMAINS ANCHORS
+# Usage: osc-unit-check.sh UNIT MODE DOMAINS ANCHORS [LOOKUP_NAME]
 #   MODE     release | qualification
 #   DOMAINS  comma list of capability domains the loader supports, e.g. 1 or 1,2
 #   ANCHORS  trust anchors present: "-" none, or letters T (TEST anchor),
 #            O (OWNER anchor); anchor keys are ../keys/test1.pub and
 #            ../keys/owner1.pub (throwaway TEST keys)
-# Prints one line: ACCEPT unit_id=<hex> | REFUSED <CODE_NAME> <number>
+# Prints one line: ACCEPT unit_digest=<hex> program_id=<hex> | REFUSED <CODE_NAME> <number>
+# With LOOKUP_NAME: ACCEPT fn_index=<n> (exact name match) | REFUSED LAUNCH_BAD_ENTRY 40
 # Exit 0 always for a verdict; 2 on usage error.
 set -u
 export LC_ALL=C
@@ -106,7 +107,7 @@ nfn=$(le "$f" 32 2); stack=$(le "$f" 36 4); ticks=$(lehex "$f" 40 8); pools=$(le
 [ "$pools" -le 64 ] || fail LIMIT_EXCEEDED 14
 { [ "${slen[1]}" -ge 8 ] && [ "${slen[1]}" -le 1048576 ]; } || fail LIMIT_EXCEEDED 14
 { [ "${slen[2]}" -ge 4 ] && [ "${slen[2]}" -le 262144 ] && [ $((slen[2] % 4)) -eq 0 ]; } || fail LIMIT_EXCEEDED 14
-[ "${slen[3]}" -eq $((nfn * 32)) ] || fail LIMIT_EXCEEDED 14
+[ "${slen[3]}" -eq $((nfn * 96)) ] || fail LIMIT_EXCEEDED 14
 [ "${slen[4]}" -ge 8 ] || fail LIMIT_EXCEEDED 14
 ncap=$(le "$f" "${off[4]}" 2)
 [ "$ncap" -le 16 ] || fail LIMIT_EXCEEDED 14
@@ -120,9 +121,9 @@ done
 [ "$(hexat "$f" "${off[1]}" 7)" = "4f534331495200" ] || fail IR_MALFORMED 19
 [ "$(le "$f" $((off[1] + 7)) 1)" -eq "$ufv" ] || fail IR_MALFORMED 19
 # 20 ENTRY_TABLE
-prev=-1
+prev=-1; seen=""; found=-1; LOOKUP=${5:-}
 for ((i = 0; i < nfn; i++)); do
-    e=$((off[3] + i * 32))
+    e=$((off[3] + i * 96))
     [ "$(le "$f" "$e" 2)" -eq "$i" ] || fail ENTRY_TABLE 20
     nregs=$(le "$f" $((e + 2)) 1); ret=$(le "$f" $((e + 3)) 1)
     [ "$nregs" -le 6 ] || fail ENTRY_TABLE 20
@@ -143,6 +144,17 @@ for ((i = 0; i < nfn; i++)); do
     co=$(le "$f" $((e + 12)) 4)
     { [ $((co % 4)) -eq 0 ] && [ "$co" -lt "${slen[2]}" ] && [ "$co" -gt "$prev" ]; } || fail ENTRY_TABLE 20
     prev=$co
+    # bounded exact-match name: 1..63 bytes of [A-Za-z_][A-Za-z0-9_]*, zero padded; hash is an index only
+    nl=$(le "$f" $((e + 32)) 1)
+    { [ "$nl" -ge 1 ] && [ "$nl" -le 63 ]; } || fail ENTRY_NAME 31
+    iszero "$f" $((e + 33 + nl)) $((63 - nl)) || fail ENTRY_NAME 31
+    nm=$(xxd -p -s $((e + 33)) -l "$nl" "$f" | tr -d '\n' | xxd -r -p | tr -d '\0')
+    [ "${#nm}" -eq "$nl" ] && [[ "$nm" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || fail ENTRY_NAME 31
+    want=$({ printf 'AIENOS-OSC-FN-NAME-V1\0'; printf '%s' "$nm"; } | sha256sum | head -c 32)
+    [ "$(hexat "$f" $((e + 16)) 16)" = "$want" ] || fail ENTRY_NAME_HASH 32
+    case " $seen " in *" $nm "*) fail ENTRY_NAME_DUPLICATE 33 ;; esac
+    seen="$seen $nm"
+    [ "$nm" != "$LOOKUP" ] || found=$i
 done
 # 21 CAPS_TABLE
 iszero "$f" $((off[4] + 2)) 6 || fail CAPS_TABLE 21
@@ -202,4 +214,8 @@ for ((i = 0; i < ncap; i++)); do
         [ "${g:0:8}" = 00000000 ] || fail CAP_GEN_NOT_REPRESENTABLE 28
     fi
 done
-echo "ACCEPT unit_id=${shash[1]}"
+if [ -n "$LOOKUP" ]; then
+    [ "$found" -ge 0 ] || fail LAUNCH_BAD_ENTRY 40
+    echo "ACCEPT fn_index=$found"; exit 0
+fi
+echo "ACCEPT unit_digest=$digest program_id=${shash[1]}"

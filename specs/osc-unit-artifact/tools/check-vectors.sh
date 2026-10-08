@@ -19,5 +19,11 @@ while read -r name mode domains anchors rest; do
     n=$((n + 1))
     if [ "$got" != "$rest" ]; then echo "MISMATCH $name: want '$rest' got '$got'" >&2; fail=1; fi
 done <"$here/../vectors/expected.txt"
+while read -r name mode domains anchors lname rest; do
+    case $name in '#'*|'') continue ;; esac
+    got=$(bash "$here/osc-unit-check.sh" "$here/../vectors/$name" "$mode" "$domains" "$anchors" "$lname")
+    n=$((n + 1))
+    if [ "$got" != "$rest" ]; then echo "MISMATCH lookup $name $lname: want '$rest' got '$got'" >&2; fail=1; fi
+done <"$here/../vectors/lookups.txt"
 [ $fail -eq 0 ] || exit 1
 echo "OSC_UNIT_VECTORS_PASS $n vectors"

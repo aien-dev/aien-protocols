@@ -72,10 +72,14 @@ resign() {
 
 # ---- entry table (real functions of min.osc, from the compiler) -----------
 namehash() { { printf 'AIENOS-OSC-FN-NAME-V1\0'; printf '%s' "$1"; } | sha | head -c 32; }
-# entry FN_INDEX NREGS RET K0 K1 K2 K3 K4 K5 CODE_OFFSET NAME
+# entry FN_INDEX NREGS RET K0 K1 K2 K3 K4 K5 CODE_OFFSET NAME [HASH_HEX] [NAMELEN]
+# 96-byte record: 32-byte fixed part (name_hash is an index only) then name_len u8 and name[63]
 entry() {
+    local name=${11} h=${12:-} nl=${13:-${#11}}
+    [ -n "$h" ] || h=$(namehash "$name")
     le16 "$1"; u8 "$2"; u8 "$3"; u8 "$4"; u8 "$5"; u8 "$6"; u8 "$7"; u8 "$8"; u8 "$9"; le16 0
-    le32 "${10}"; hex2bin "$(namehash "${11}")"
+    le32 "${10}"; hex2bin "$h"
+    u8 "$nl"; printf '%s' "$name"; zeros $((63 - ${#name}))
 }
 entries_min() { entry 0 2 5 5 5 0 0 0 0 0 add; entry 1 2 5 11 5 0 0 0 0 60 first_byte; }
 
@@ -181,15 +185,36 @@ cp "$V/a04_valid_owner_class.unit" "$V/r21_untrusted_owner_signer.unit"
 # unsigned trailing byte
 { cat "$base"; printf '\0'; } >"$V/r22_trailing_byte.unit"
 
+# ---- entry name rules (bounded exact-match names; hash is only an index) ---
+ent_with() { # NAME_OF_FILE ENTRY1_ARGS... : entry 0 (add) then a custom entry 1
+    local out=$1; shift
+    { entry 0 2 5 5 5 0 0 0 0 0 add; entry "$@"; } >"$out"
+}
+ent_with "$tmp/ent_charset" 1 2 5 11 5 0 0 0 0 60 "bad name"
+ent_with "$tmp/ent_empty" 1 2 5 11 5 0 0 0 0 60 ""
+ent_with "$tmp/ent_long" 1 2 5 11 5 0 0 0 0 60 first_byte "" 64
+ent_with "$tmp/ent_dup" 1 2 5 11 5 0 0 0 0 60 add
+ent_with "$tmp/ent_hashshare" 1 2 5 11 5 0 0 0 0 60 first_byte "$(namehash add)"
+entries_min >"$tmp/ent_pad"
+# nonzero byte in the padding after "add" (entry 0: name_len at 32, name at 33..35, padding from 36)
+patch "$tmp/ent_pad" 38 41 >"$tmp/ent_pad2"
+build "$V/r23_entry_name_charset.unit" test1 1 5 1 2 "$tmp/ir" "$tmp/code" "$tmp/ent_charset" "$tmp/caps0"
+build "$V/r24_entry_name_empty.unit" test1 1 5 1 2 "$tmp/ir" "$tmp/code" "$tmp/ent_empty" "$tmp/caps0"
+build "$V/r25_entry_name_too_long.unit" test1 1 5 1 2 "$tmp/ir" "$tmp/code" "$tmp/ent_long" "$tmp/caps0"
+build "$V/r26_entry_name_padding.unit" test1 1 5 1 2 "$tmp/ir" "$tmp/code" "$tmp/ent_pad2" "$tmp/caps0"
+build "$V/r27_entry_name_duplicate.unit" test1 1 5 1 2 "$tmp/ir" "$tmp/code" "$tmp/ent_dup" "$tmp/caps0"
+build "$V/r28_entry_hash_shared_other_name.unit" test1 1 5 1 2 "$tmp/ir" "$tmp/code" "$tmp/ent_hashshare" "$tmp/caps0"
+
 # ---- expected verdicts ----------------------------------------------------
 # columns: vector mode domains anchors verdict
+udig() { head -c 320 "$1" | { printf 'AIENOS-OSC-UNIT-V1\0'; cat; } | sha; }
 irid=$(sha <"$SRC/min.ir")
 {
     echo "# vector mode domains anchors verdict   (anchors: T TEST anchor present, O OWNER anchor present, - none)"
-    echo "a01_valid_min.unit qualification 1 T ACCEPT unit_id=$irid"
-    echo "a02_valid_caps_kernel_domain.unit qualification 1 T ACCEPT unit_id=$irid"
-    echo "a03_valid_hosted_domain.unit qualification 1,2 T ACCEPT unit_id=$irid"
-    echo "a04_valid_owner_class.unit release 1 O ACCEPT unit_id=$irid"
+    echo "a01_valid_min.unit qualification 1 T ACCEPT unit_digest=$(udig "$V/a01_valid_min.unit") program_id=$irid"
+    echo "a02_valid_caps_kernel_domain.unit qualification 1 T ACCEPT unit_digest=$(udig "$V/a02_valid_caps_kernel_domain.unit") program_id=$irid"
+    echo "a03_valid_hosted_domain.unit qualification 1,2 T ACCEPT unit_digest=$(udig "$V/a03_valid_hosted_domain.unit") program_id=$irid"
+    echo "a04_valid_owner_class.unit release 1 O ACCEPT unit_digest=$(udig "$V/a04_valid_owner_class.unit") program_id=$irid"
     echo "r01_bad_magic.unit qualification 1 T REFUSED BAD_MAGIC 2"
     echo "r02_container_version_2.unit qualification 1 T REFUSED CONTAINER_VERSION 3"
     echo "r03_unit_format_6.unit qualification 1 T REFUSED UNIT_FORMAT 5"
@@ -212,4 +237,21 @@ irid=$(sha <"$SRC/min.ir")
     echo "r20_domain_unsupported.unit qualification 1 T REFUSED CAP_DOMAIN_UNSUPPORTED 27"
     echo "r21_untrusted_owner_signer.unit release 1 - REFUSED UNTRUSTED_SIGNER 25"
     echo "r22_trailing_byte.unit qualification 1 T REFUSED TRAILING_BYTES 8"
+    echo "r23_entry_name_charset.unit qualification 1 T REFUSED ENTRY_NAME 31"
+    echo "r24_entry_name_empty.unit qualification 1 T REFUSED ENTRY_NAME 31"
+    echo "r25_entry_name_too_long.unit qualification 1 T REFUSED ENTRY_NAME 31"
+    echo "r26_entry_name_padding.unit qualification 1 T REFUSED ENTRY_NAME 31"
+    echo "r27_entry_name_duplicate.unit qualification 1 T REFUSED ENTRY_NAME_DUPLICATE 33"
+    echo "r28_entry_hash_shared_other_name.unit qualification 1 T REFUSED ENTRY_NAME_HASH 32"
 } >"$V/expected.txt"
+
+# ---- lookup-by-name expectations (exact match; hash is only an index) ------
+{
+    echo "# vector mode domains anchors name verdict"
+    echo "a01_valid_min.unit qualification 1 T add ACCEPT fn_index=0"
+    echo "a01_valid_min.unit qualification 1 T first_byte ACCEPT fn_index=1"
+    echo "a01_valid_min.unit qualification 1 T ADD REFUSED LAUNCH_BAD_ENTRY 40"
+    echo "a01_valid_min.unit qualification 1 T ad REFUSED LAUNCH_BAD_ENTRY 40"
+    echo "a01_valid_min.unit qualification 1 T first_byt REFUSED LAUNCH_BAD_ENTRY 40"
+    echo "a01_valid_min.unit qualification 1 T missing REFUSED LAUNCH_BAD_ENTRY 40"
+} >"$V/lookups.txt"

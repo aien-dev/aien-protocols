@@ -3,34 +3,42 @@
 Contract: [`../OSC_UNIT_ARTIFACT.md`](../OSC_UNIT_ARTIFACT.md) (v1 DRAFT, not frozen).
 Each `.unit` file is a complete container. `expected.txt` lists, per vector, the loader mode, supported capability domains, trust anchors present, and the required verdict. Public keys are in [`../keys/`](../keys/): both are THROWAWAY TEST keys derived from fixed labels in [`../tools/make-vectors.sh`](../tools/make-vectors.sh). They are not any AIEN key and must never enter a real anchor set.
 
-Regenerate and check everything: `bash specs/osc-unit-artifact/tools/check-vectors.sh`.
-The valid unit is `../src/min.osc` as compiled by omega `oscc` at `d64ccb3` (`ir_sha256=084803c2...1a1d`). Vector verdicts were produced by the shell generator and judged by the shell reference checker only; no kernel or adapter loader has run them.
+Regenerate and check everything: `bash specs/osc-unit-artifact/tools/check-vectors.sh` (32 container vectors plus 6 name lookups, 38 checks).
+The valid unit is `../src/min.osc` as compiled by omega `oscc` at `d64ccb3` (`ir_sha256=084803c2...1a1d`). Verdicts were produced by the shell generator and judged by the shell reference checker only; no kernel or adapter loader has run them.
 
-| sha256 | vector |
+| sha256 | file |
 |---|---|
-| `ae6a921881b62fe8cb1d9cb27f92db6ecc32186cb39e3ff6b5b96250d2749a89` | `a01_valid_min.unit` |
-| `17d7d99e8eecbef75dac0a726e1b881e8d4dbb50a40784e831a58bafd68336aa` | `a02_valid_caps_kernel_domain.unit` |
-| `563c7635f5a5fe5340c0e39c84065d2dfea893014f3df1be2be550aa232dd6eb` | `a03_valid_hosted_domain.unit` |
-| `475ae4b511179276d49d576ecee4bc17b3487294c6350805d42b96b5435d8d16` | `a04_valid_owner_class.unit` |
-| `be228ca3d267a9fc8c2fc60a5215cebd164c56f30d338cade6eaed44c896b148` | `r01_bad_magic.unit` |
-| `b86c49a7f7ce74d21e56dee2fc8f7ee5abc40cfae3e37c4e578e342e9f30ae54` | `r02_container_version_2.unit` |
-| `a68a2a79cea336e3bd017b3f64aa0db0e6f7d339dae446d64704879e589d89d9` | `r03_unit_format_6.unit` |
-| `fecb015de9af99ee98f372573fde6917f10c8a651aca45d3e09affd0c1053bba` | `r04_abi_version_2.unit` |
-| `2456e5012d7cb21c6fab57047f2ccc490259824262b9cfaf108f817b7abb3b40` | `r05_unknown_flags.unit` |
-| `10045a51b691b9cc64d1e6c90318ff8a261df863738336660f2e1ff848051c72` | `r06_header_field_reserved.unit` |
-| `8481f2348e72ae8bce9fde745a25f0536007d1651f717ca8de494798584200e4` | `r07_truncated_file.unit` |
-| `a1851d5a7a12c4225d08ed80faa9e38b3afff0b5c926e2df35a1db070f36368e` | `r08_section_bounds.unit` |
-| `4732d8171fd757a0a0119fb2c4737fb2abf05df19b5a894fdd3f9544b7cd68b0` | `r09_section_overlap.unit` |
-| `f5cba7f5eeaeec1089938c7b0522c0009788c1771e3f75127433a99af8b50b5d` | `r10_section_layout_offset.unit` |
-| `420050c717377ed2dd2d1baf3238a316b9bebe1c475579b960769688d988c01c` | `r11_too_many_functions.unit` |
-| `8960f4b3279e7f898f0f9d4b95df0c4f8d395ea14bfad016b12db15e9e3fa875` | `r12_code_hash_mismatch.unit` |
-| `c3080ca18396413cefe4f0a4a586a042ad94759407231e7b0c5114848f5faeee` | `r13_ir_hash_mismatch.unit` |
-| `5cabda267a1896954183650a1a566ac8186ce31b5e3a4dbc56d7b0a8e750a9f2` | `r14_bad_signature.unit` |
-| `80fa4dfe21c8b584f7b5cd31ccfa3ecac8c2c4d1735cf2d6cafbb06074c541bc` | `r15_ir_version_mismatch.unit` |
-| `7f2b19843d6b19821f4045fdbc18964e2a8a66369f03964037823c28d66d732a` | `r16_entry_table_unaligned.unit` |
-| `5d8be3ae496517afa41c4b5bfd7bd856ad143271939fb94558605c89667562a7` | `r17_too_many_functions.unit` |
-| `42c20250e970bbedf2ea044af71e01939f607dd0aa95da7167a2ee8a1c52f5fb` | `r18_gen_not_representable.unit` |
-| `ae6a921881b62fe8cb1d9cb27f92db6ecc32186cb39e3ff6b5b96250d2749a89` | `r19_test_signer_release.unit` |
-| `563c7635f5a5fe5340c0e39c84065d2dfea893014f3df1be2be550aa232dd6eb` | `r20_domain_unsupported.unit` |
-| `475ae4b511179276d49d576ecee4bc17b3487294c6350805d42b96b5435d8d16` | `r21_untrusted_owner_signer.unit` |
-| `07e1b6d823f5dfd40dce550c98a15436f3c53afe6aaa98d37b1de8cbb9044831` | `r22_trailing_byte.unit` |
+| `5711ca0a71062f7df709bde41ed80c8e724f4826b886ecc9b0ceb55f80682da4` | `a01_valid_min.unit` |
+| `617ccd94e08502b6d99995dfe13af7c0a3c166411b3e15ea605669dc5f216833` | `a02_valid_caps_kernel_domain.unit` |
+| `aad288697f7527d40e1ee38f6b46eacac5e109eaa2fa541886381e3992117d88` | `a03_valid_hosted_domain.unit` |
+| `f837ad840f1f97c5e3b802bfcae02f7f45c6e71db64adcca30eca9c53d1e473c` | `a04_valid_owner_class.unit` |
+| `fab5256cf6a05f57e72f64c24f92e8e4bd7cf3f18156f139f32ac028ed2a4362` | `r01_bad_magic.unit` |
+| `5b1b89a87b3246aaef583d0b96acc9fe15a76b7552466fc0932bd6380c67e12b` | `r02_container_version_2.unit` |
+| `819bda98999a593091a9df83ef6f66bc4698a29ab55abc430dd0924028380543` | `r03_unit_format_6.unit` |
+| `98363de25611c12cb7a2a9075f3c581693c97a2c8b0ded10d53aec3c815f140d` | `r04_abi_version_2.unit` |
+| `d1a57a64536b99144ab0d270cb7d8270ce558440c224a08b212010396fd8c9c3` | `r05_unknown_flags.unit` |
+| `eda845c0f82ca9b380517cf28caeccc1f852545d8bdda9eca85a14af0f56eaea` | `r06_header_field_reserved.unit` |
+| `e52a2d136387c8424cf471f9713fc8eebfcaab2f4f277bbc9cca71aade53af9c` | `r07_truncated_file.unit` |
+| `7026de6780e9c26ef76314bbea8a49cfe441b538db461f977eecaded94f7203e` | `r08_section_bounds.unit` |
+| `11f6a186378779ebf08e3a5366915fc6874b1802c148c1d3e66f1a08b4216267` | `r09_section_overlap.unit` |
+| `18aa1923d0d32814e23f09e509641d072ea71d2dc52307bece551a29a950a669` | `r10_section_layout_offset.unit` |
+| `8d652da89047e6010da08d5fcff7e963987c17b815c5766206875bac9ef2701a` | `r11_too_many_functions.unit` |
+| `65cee58a6c288b8ece2dd1b0174d5cedac16c5b5c2d5e060e014fa1061b2f44d` | `r12_code_hash_mismatch.unit` |
+| `16a0005d56f3c720c3bc9dd28c9c2393efab0cced036c30c996d7a3c45a4a276` | `r13_ir_hash_mismatch.unit` |
+| `1c8456e5febe85172543dc874a69ee4aa94887342889eea3757e916bd0fe992f` | `r14_bad_signature.unit` |
+| `d6603624942219f254069806b55abfa2337804d2c1513d27329609d00bc45f1e` | `r15_ir_version_mismatch.unit` |
+| `c013ba363339bf37c1d360290f469564744bc973394009d6202a12c74a2b1167` | `r16_entry_table_unaligned.unit` |
+| `a154f18b2c840828aa15dd0997719f7d48f2a7ecde502b55d0dd2a08e736b087` | `r17_too_many_functions.unit` |
+| `54c5f236586c03139434a0333aa7bb484f09376523b839d3d4c230619812df65` | `r18_gen_not_representable.unit` |
+| `5711ca0a71062f7df709bde41ed80c8e724f4826b886ecc9b0ceb55f80682da4` | `r19_test_signer_release.unit` |
+| `aad288697f7527d40e1ee38f6b46eacac5e109eaa2fa541886381e3992117d88` | `r20_domain_unsupported.unit` |
+| `f837ad840f1f97c5e3b802bfcae02f7f45c6e71db64adcca30eca9c53d1e473c` | `r21_untrusted_owner_signer.unit` |
+| `a76227162901ed0d794f15b597292f627b9fb1173e07ceb164fa58812d974dbb` | `r22_trailing_byte.unit` |
+| `2d0c6c942fe5810d53f4b8811eab78973daed1ca7bedb47be864640486e61332` | `r23_entry_name_charset.unit` |
+| `d65ff046a0a792461a819942cd9aa35d502be0a864458e69940d437e10d26987` | `r24_entry_name_empty.unit` |
+| `8f14347cfaa92c05e1d5c4a7f6dc687936b34bbe931f1a4442d8c170ae4a4898` | `r25_entry_name_too_long.unit` |
+| `1fbd5ee080bed169b6954cf19988c9a8b546e11eae45644f9fb3db8e84de5704` | `r26_entry_name_padding.unit` |
+| `e6413aaa21dab182bcdb9a3ee554a65ac3b64cbbbdbf0092c290a7952ea674bd` | `r27_entry_name_duplicate.unit` |
+| `b5e77bbf38071bc71130be339ca4790c68598598a2cde38edc46ec6b507bf3b7` | `r28_entry_hash_shared_other_name.unit` |
+| `1fa8a3239ed6e85505163618b4bc0bbe7ae500bdc1c330921a20ad6578a365ee` | `expected.txt` |
+| `b9133467aeeba8ed6959e2a1ddbb9e8479b68e9abba295c437b8e82c8ed1e707` | `lookups.txt` |
