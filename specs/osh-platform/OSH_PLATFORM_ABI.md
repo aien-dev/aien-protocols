@@ -3,7 +3,7 @@
 **Status**: v1 DRAFT, not frozen: freezes after OSC-EXT-BYTES lands and the Linux adapter has consumed it once.
 **ABI version field**: `1` (nothing is frozen, so any v1 field may still change until the freeze; after it, changes bump the version)
 **License**: Community Specification License 1.0
-**Origin**: `aien-dev/aien-architecture#158`. This file makes the shell-core to platform boundary normative. It claims no implementation: no shell, no adapter and no OSC-EXT-BYTES exist on `main` at the time of writing (omega `b980783`; design only, `docs/osc/OSC-EXT-BYTES-DESIGN.md`).
+**Origin**: `aien-dev/aien-architecture#158`. This file makes the shell-core to platform boundary normative. First implementation: omega `src/osh` (lexer, parser and expander units in OSC with independent C references, and the Linux host `build/osh/osh`; omega#337, #339, #340). Where the implementation and this draft differ, the difference is listed in section 14 until the freeze.
 **Conformance vectors**: [`vectors/`](vectors/), [`vectors/expected.txt`](vectors/expected.txt), generated inputs by [`tools/make-vectors.sh`](tools/make-vectors.sh)
 **Not covered**: shell language semantics beyond what the request record needs (owned by the first-release freeze in `aien-architecture`), the Omega compiler, kernel IPC.
 
@@ -68,7 +68,10 @@ A call that returns 100, 101 or 102 is idempotent: repeating it without change y
 - Unsupported or malformed syntax, one code each: 220 `NUL_BYTE`, 221 `BACKTICK`, 222 `GLOB`, 223 `TILDE`, 224 `PARAM_OP`, 225 `SPECIAL_PARAM`, 226 `CMDSUB`, 227 `BACKGROUND`, 228 `SUBSHELL`, 229 `HEREDOC`, 230 `CASEEND`, 231 `REDIR_OTHER`, 232 `FD_RANGE`, 233 `IF_COMPOUND`, 234 `LOOP`, 235 `CASE`, 236 `GROUP`, 237 `FUNCTION`, 238 `NEGATION`, 239 `UNSUPPORTED_BUILTIN`, 240 `IFS_ASSIGN`, 241 `SYNTAX_EMPTY_CMD`, 242 `SYNTAX_REDIR_TARGET`, 243 `AMBIGUOUS_REDIRECT`.
 - Value-dependent, raised by the expander: 244 `VALUE_NUL`, 245 `VALUE_GLOB` (an unquoted expansion result contains `*`, `?` or `[`; refused so behavior never silently differs from a globbing shell).
 
-Codes 246 to 255 are reserved. Meaning of each syntax code is its name in the first-release language freeze; this ABI only fixes the number.
+- Added during implementation (draft): 246 `BRACE_EXPANSION` (a word bash would brace-expand), 247 `POSITIONAL_RANGE` (`${10}`, `${00}`), 248 `SYNTAX_EOF` (`S_EOI` = 1 and the input ends inside a quote or `${`; a final lone backslash is then a literal), 249 `APPEND_ASSIGN` (a `NAME+=` word), 250 `FD_VARIABLE` (a `{NAME}` word directly before a redirection operator).
+- 239 `UNSUPPORTED_BUILTIN` is decided by the expander on argv[0] after expansion, offset = start of the command word. Draft list: `set eval exec . source trap shift read return break continue local readonly alias wait : declare typeset let command type umask hash ulimit getopts jobs pushd popd dirs history unalias fg bg builtin enable shopt mapfile times caller disown suspend logout bind help compgen complete fc compopt`. The implementation compares at most 8 bytes, so longer names (`readarray`) are not caught (open item, section 14).
+
+Codes 251 to 255 are reserved. Meaning of each syntax code is its name in the first-release language freeze; this ABI only fixes the number.
 
 ### 5.4 Error offset
 
@@ -96,9 +99,11 @@ The adapter must pass exactly 11456 cells; fewer is `WORKSPACE_SIZE`. Packing OU
 
 0 `magic`, 1 `abi_version`, 2 `phase`, 3 `last_status`, 4 `error_code`, 5 `error_offset`, 6 `input_cursor`, 7 `workspace_cells` (expected 11456), 8 `var_req_kind`, 9 `var_req_a`, 10 `var_req_len`, 11 `var_req_seq`, 12 to 47 core-internal, 48 to 63 reserved (explicit nesting stack for later `$( )` support; zero in v1; a nonzero value is `ABI_RESERVED`).
 
+Host-written cells beyond `last_status` (draft, implementation numbering): 25 `S_NOSKIP` (written before the first `expand_run`; 1 = return every pipeline with no connector skipping, used by conformance vectors; 0 = the core skips a pipeline whose `&&` or `||` connector fails given `last_status`, and a skipped pipeline is never expanded), 28 `S_EOI` (1 = no more bytes will be appended: a host sets it after the last line, including a last line with no newline; a final `\` is then a literal and an open quote is `SYNTAX_EOF`). The expander reuses lexer continuation cells (12 to 16, 18 to 26 and 29 to 33) once the parser has completed the list; the session is single use after that, so a host must not read them as lexer state. `expand_run` refuses with `ABI_RESERVED` if the parser has not completed the list.
+
 ### 6.3 Variable protocol
 
-On status 102 the core writes `var_req_kind`: 1 NAME (`var_req_a` = byte offset of the name in `inp`, `var_req_len` = length), 2 `$?`, 3 positional `k` (`var_req_a` = k, 0 to 9), 4 `$#`, 5 positional list. The adapter writes `STAGING` as: cell 0 `found` (0 or 1), cell 1 `len` (0 to 1024), cell 2 `npos`, cell 3 zero, cells 4 onward the value bytes, one per cell. A value over 1024 bytes is `CAP_VALUE`. Kind 5 is answered with `npos` only (`found` = 1, `len` = 0); the core then requests each positional with kind 3, each counting toward `CAP_VARREQ`. An unset name is `found` = 0, not an error. The core consumes `STAGING` on the next `expand_run`; a repeated call before consumption is safe.
+On status 102 the core writes `var_req_kind`: 1 NAME (`var_req_a` = byte offset of the name in `inp`, `var_req_len` = length), 2 `$?`, 3 positional `k` (`var_req_a` = k; 0 to 9 for `$k`, up to `npos` while expanding `$@` or `$*`, bounded by `CAP_VARREQ`), 4 `$#`, 5 positional list. The adapter writes `STAGING` as: cell 0 `found` (0 or 1), cell 1 `len` (0 to 1024), cell 2 `npos`, cell 3 zero, cells 4 onward the value bytes, one per cell. A value over 1024 bytes is `CAP_VALUE`. Kind 5 is answered with `npos` only (`found` = 1, `len` = 0); the core then requests each positional with kind 3, each counting toward `CAP_VARREQ`. An unset name is `found` = 0, not an error. The core writes `STAGING` cell 0 = 2 (unanswered) together with the request; a repeated `expand_run` while cell 0 is still above 1 returns 102 again and changes nothing. The adapter answer overwrites cell 0 with 0 or 1, and the core consumes it on the next call.
 
 ## 7. Request record
 
@@ -183,7 +188,8 @@ Execution recording to Cortex is optional and policy-controlled, off unless poli
 3. Exact session cell indices are generated from one layout list with a shell script, plus a differential against a small C reference tokenizer.
 4. Store location syntax and the native `RESOLVE` classes are decided with AIENOS release R1.1.
 5. The numbering in 5.3 is a draft assignment; it freezes with the ABI.
-6. Expected outputs in `vectors/` were authored from this text and no implementation has run them.
+6. Expected outputs in `vectors/` were authored from this text; the omega host vector harness (`S_NOSKIP` = 1) is the first implementation to run them.
+7. Implementation deltas folded in above and to be confirmed or renumbered at freeze: codes 246 to 250, the 239 list and its 8-byte limit, `S_NOSKIP`, `S_EOI`, the `STAGING` unanswered sentinel, positional `k` above 9, and the expander overlay of dead lexer cells.
 
 ## 15. Conformance
 

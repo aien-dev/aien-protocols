@@ -25,3 +25,9 @@ mkin v012 'echo $G\n'; mkenv v012 'G=*.c\n'
 mkin v013 'echo a\0b\n'
 mkin v014 'echo a\\\nb\n'
 { printf 'echo '; head -c 1100 /dev/zero | tr '\0' a; printf '\n'; } > "$OUT/v015.in"
+# v016 to v020: refusals numbered during implementation (omega#336), section 5.3
+mkin v016 'echo {a,b}\n'
+mkin v017 'echo {1..3}\n'
+mkin v018 'echo ${10}\n'
+mkin v019 '{ echo hi; }\n'
+mkin v020 'echo {a} { } {}\n'
