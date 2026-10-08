@@ -9,7 +9,7 @@ VERSIONING.md.
 
 ### Specifications
 
-- `specs/osc-unit-artifact`: OSC Unit Artifact v1 DRAFT (not frozen), the signed
+- `specs/osc-unit-artifact`: OSC Unit Artifact v1 FROZEN (2026-10-08), the signed
   container in which an OSC-compiled Omega unit (A64 code plus canonical IR) is
   admitted and launched by AIENOS or the host adapter. Named refusal codes,
   launch result shape, bounded exact-match entry names, instruction-subset code scan, 47 refusal and 5 acceptance container vectors plus lookup, loader-state and launch-argument scenarios, shell generator and

@@ -1,7 +1,7 @@
-# OSC Unit Artifact v1 (signed container for an OSC-compiled Omega unit)
+# OSC Unit Artifact v1 FROZEN (signed container for an OSC-compiled Omega unit)
 
-**Status**: v1 DRAFT, not frozen. Freezes after the OSH Platform ABI draft (`specs/osh-platform`, aien-protocols PR #16) has consumed it once and an AIENOS or host loader has run the vectors.
-**Container version field**: `1` (nothing is frozen, so any v1 field may change until the freeze; after it, changes bump the version)
+**Status**: v1 FROZEN (2026-10-08, reviewed by session ee6210 at cee67fe). Change control: any change to this container is a new `container_version` (a v2 draft), never an edit of v1.
+**Container version field**: `1`
 **License**: Community Specification License 1.0
 **Origin**: `aien-dev/aien-architecture#158` and `#162` (Campaign 3). Shared contract between the AIENOS loader and task work and OSH (the Omega-native shell).
 **Claims no implementation**: no loader, no packer and no launcher for this container exists. The only things that have run are the shell generator and the shell reference checker in this directory (section 14).
