@@ -1,12 +1,12 @@
-# OSC Unit Artifact v1 DRAFT (frozen pending ADR reconciliation) (signed container for an OSC-compiled Omega unit)
+# OSC Unit Artifact v1 FROZEN (signed container for an OSC-compiled Omega unit)
 
-**Status**: v1 DRAFT (frozen pending ADR reconciliation). Content reviewed by session ee6210 at cee67fe on 2026-10-08. The reconciliation table against AIENOS ADR 0013, 0014, 0017 and the Store and admission design is section 15 (aienos at c63d6db8e9ac82592899ab0c2cbd9e2a76e6c7b2); it found three open decisions (section 15.3), so the final freeze still waits. Passing vectors are not evidence of the native loader. Change control: any change to this container is a new `container_version` (a v2 draft), never an edit of v1.
+**Status**: v1 FROZEN, 2026-10-08. Content reviewed by session ee6210 at cee67fe on 2026-10-08. The three reconciliation conflicts of section 15.3 are settled on the AIENOS side by the ADR 0014 amendment "the OSC unit is a second container type" (aienos#277, commit 3da6497), with no change to any byte, vector or refusal number of this container; the AIENOS operator delegated that choice on 2026-10-08. Passing vectors are not evidence of the native loader. Change control: any change to this container is a new `container_version` (a v2 draft), never an edit of v1.
 **Container version field**: `1`
 **License**: Community Specification License 1.0
 **Origin**: `aien-dev/aien-architecture#158` and `#162` (Campaign 3). Shared contract between the AIENOS loader and task work and OSH (the Omega-native shell).
 **Claims no implementation**: no loader, no packer and no launcher for this container exists. The only things that have run are the shell generator and the shell reference checker in this directory (section 14).
 **Conformance vectors**: [`vectors/`](vectors/), [`vectors/expected.txt`](vectors/expected.txt), `lookups.txt`, `state.txt`, `launch.txt`, built by [`tools/make-vectors.sh`](tools/make-vectors.sh), judged by [`tools/osc-unit-check.sh`](tools/osc-unit-check.sh) and [`tools/osc-launch-check.c`](tools/osc-launch-check.c), proven together by [`tools/check-vectors.sh`](tools/check-vectors.sh)
-**Ground truth read**: omega `osh/osc-ext-bytes` at `d64ccb3` (`src/compiler/osc_ir.c:599-610, 689-705`, `osc_ir.h:31-40, 151-176, 252`, `osc_rt.h:32, 70, 85-99`, `osc_cg.c:143-159`, `osc_a64.c:28-93`, `oscc_main.c`, `docs/osc/OSC-1-DESIGN.md` section 7); aienos `main` at `c63d6db` (ADR 0013, 0014, 0017; `native/kernel/artifact/ck_artifact.h`, `native/kernel/core/ipc.h`). Where this draft differs from them, section 2 says so.
+**Ground truth read**: omega `osh/osc-ext-bytes` at `d64ccb3` (`src/compiler/osc_ir.c:599-610, 689-705`, `osc_ir.h:31-40, 151-176, 252`, `osc_rt.h:32, 70, 85-99`, `osc_cg.c:143-159`, `osc_a64.c:28-93`, `oscc_main.c`, `docs/osc/OSC-1-DESIGN.md` section 7); aienos `main` at `c63d6db` (ADR 0013, 0014, 0017; `native/kernel/artifact/ck_artifact.h`, `native/kernel/core/ipc.h`). Where this spec differs from them, section 2 says so.
 
 ## 1. Purpose and model
 
@@ -222,7 +222,7 @@ The loader copies the bytes into protected staging memory before parsing, and ha
 
 A unit that passes has cleared every static check of this section (in ADR 0014 terms, Parsed, Verified and Authorized, with the reservation of step 16 done); the conformance verdict for it is `ACCEPT`. ADR 0014 reaches `Admitted` only after `CanaryRunning` and `CanaryPassed`, and this container defines no canary (section 13 item 10). The loader never executes the unit before this point. It does not recompile, verify the IR, or compare code against IR (section 10).
 
-### 8.3 Refusal codes (v1 draft numbering; named, stable once frozen)
+### 8.3 Refusal codes (v1 numbering, frozen)
 
 | Code | Name | Meaning |
 |---:|---|---|
@@ -338,20 +338,20 @@ What the container does prove: these exact bytes, in this exact table, were sign
 
 GPU code and GPU loading; recursion (OSC has none); dynamic linking, relocations, imports between units; a data section; persisting or migrating a running unit; the 64-bit to 32-bit generation bridge; delegation chains from the Owner Root (ADR 0017); revocation lists; the Admission Receipt amendment; how the OSC runtime host (the provider of `OscRt`) is built and admitted on AIENOS.
 
-## 13. Open items before freeze
+## 13. Open items at freeze
 
-1. Answered by the OSH owner (ee6210, aien-protocols#17 review comment) and applied in this draft: (a) four result classes kept, `unknown_reason` added as a diagnostic only (section 9.3); (b) bounded exact-match names carried, hash is an index only (section 6.1.1); (c) execution and authorization bind to `UnitDigest`, `ir_sha256` is program identity only (section 5.2). The line-by-line review from the OSH owner is still pending; nothing here is frozen.
+1. Answered by the OSH owner (ee6210, aien-protocols#17 review comment) and applied in v1: (a) four result classes kept, `unknown_reason` added as a diagnostic only (section 9.3); (b) bounded exact-match names carried, hash is an index only (section 6.1.1); (c) execution and authorization bind to `UnitDigest`, `ir_sha256` is program identity only (section 5.2). The line-by-line review from the OSH owner followed (item 8).
 2. `OscRt` vtable offsets are fixed by `runtime_abi_version` 1. Confirmed by the OSH owner: `src/compiler/osc_rt.h` and `osc_rt.c` are byte-identical between omega `main` and the OSC-EXT-BYTES head `d64ccb3` (empty `git diff`), so OSC-EXT-BYTES does not change the runtime table (`osc_rt.h:85-99`, offsets 0 to 96). Any future change to it bumps `runtime_abi_version`, and unknown versions are refused.
-3. How AIENOS hosts `OscRt`: a Binary Artifact v0 task that receives the unit, or a new admission path. This spec does not choose.
+3. How AIENOS hosts `OscRt`: answered by AIENOS. The OSC unit has its own admission path, separate from Binary Artifact v0 (the ADR 0014 amendment "the OSC unit is a second container type" (aienos#277, commit 3da6497)).
 4. Whether the loader should cross-check `function_count` against the IR (needs parsing the struct table) in v2.
 5. OWNER delegation from the TRUST-1 Owner Root (ADR 0017) and revocation.
-6. The numbering in section 8.3 freezes with the container.
+6. The numbering in section 8.3 is frozen with the container.
 7. Expected verdicts in `vectors/` were produced by the shell generator and judged by the shell checker and a small C reference written from this text. No kernel or adapter loader has run them. The shell checker implements the instruction subset as a mask match only (section 8.4).
 8. Resolved by the line review (OSH owner, review of 1e49b3f, later commits): launch-argument rule restated exactly after `osc_ir_slice_args_ok` (9.2); one fixed capability-policy order (8.2 step 15); instruction subset and the `SVC` and `OscRt` launch locks (8.4, 9.1.1); entry kinds 11 and 12 need unit format 5; equal `name_hash` refused; canonical signature `S < L`; signer class and algorithm checked before hashing; length mismatches of ENTRY and CAPS are `ENTRY_TABLE` and `CAPS_TABLE`; `pool_slots` and `cpu_ticks` defined.
 9. Found while fixing the review: the compiler emits `brk #trapcode` after every trap call (`osc_cg.c:154-159`), so `brk` cannot be banned outright as the review suggested; it is allowed only with an immediate of 1 to 14.
 
-10. ADR 0014 reaches `Admitted` only after a canary run. This container defines no canary; AIENOS must say whether a unit is canaried and with what entry and arguments (section 8.2 closing paragraph, section 15.1 row 48).
-11. Three reconciliation conflicts need a decision before the final freeze: C1 (meaning of `required_generation`), C2 (which test keys a native qualification build trusts) and C3 (ADR 0014 limit of 2 sections against the 4 sections of this container). All are in section 15.3.
+10. ADR 0014 reaches `Admitted` only after a canary run. This container defines no canary; AIENOS must say whether a unit is canaried and with what entry and arguments (section 8.2 closing paragraph, section 15.1 row 48). AIENOS answer for now: no canary, and an accepted unit is never reported as ADR 0014 `Admitted` and gets no Admission Receipt v0; a canary is later AIENOS work (the ADR 0014 amendment "the OSC unit is a second container type" (aienos#277, commit 3da6497), point 6).
+11. The three reconciliation conflicts C1, C2 and C3 of section 15.3 are settled on the AIENOS side, with no change to this container; see the status lines there.
 
 ## 14. Conformance
 
@@ -458,22 +458,22 @@ No fix below was made, because each would change signed bytes, vector expectatio
 - Option A: keep the field and domains. AIENOS amends ADR 0013 or 0014 to define a per-resource generation counter that the loader supplies. No byte change here. Upside: v1 stays as vetted. Downside: AIENOS must write that amendment before any loader can honor codes 28 and 29.
 - Option B: remove `required_generation` and `domain` in a v2 draft, so each request is exactly the 48-byte ADR 0014 record. This changes the capability record size, the section hash, every vector with a CAPS section, and retires refusal codes 27 to 29 (vectors a02, a03, r18, r20, r36 and `state.txt`). Upside: no concept the ADRs lack. Downside: a new `container_version` and regenerated vectors.
 
-Status of C1: still open. aienos#277 refuses any pinned generation (CAP_GENERATION_STALE) until capability authority defines it.
+Status of C1: settled for v1 by AIENOS: Option A without a byte change. Until an AIENOS ADR defines a per-resource generation, the AIENOS admission path refuses every nonzero pinned generation with `CAP_GENERATION_STALE` (the ADR 0014 amendment "the OSC unit is a second container type" (aienos#277, commit 3da6497), point 5). Defining the generation later needs no change here.
 
 **C2. Which test keys a native qualification build trusts (row 17).** ADR 0014 allows one known test key; the vectors use two throwaway keys that the native build does not trust.
 - Option A: AIENOS amends ADR 0014 so a `seed0b-test-anchor` build may hold a list that includes the spec's `keys/test1.pub` and `keys/owner1.pub`. No byte change here. Downside: the ADR rule of "one known key" is loosened for a test build only.
 - Option B: re-sign the TEST vectors with the RFC 8032 TEST 1 key that the native build already trusts. The signer fingerprint is inside `UnitDigest`, so every signed vector and every `unit_digest` in `expected.txt` changes; the OWNER vectors still need a second key. Downside: regenerated vectors and a changed key story.
 
-Status of C2: resolved in practice by aienos#277 (Option A) with an ADR 0014 amendment note; final when aienos#277 merges.
+Status of C2: settled, Option A (the ADR 0014 amendment note on a second TEST key, and the ADR 0014 amendment "the OSC unit is a second container type" (aienos#277, commit 3da6497), point 4).
 
 **C3. Section count and size limits of ADR 0014 section 4 (row 63).** ADR 0014 allows at most 2 sections ("Maximum section count: 2"), 16 MiB per artifact, 8 MiB of payload and 16 capabilities. An OSCUNIT container has 4 sections, so a loader that enforces the ADR limit for this container refuses every unit. Length (2 MiB) and capability count (16) already fit.
 - Option A: AIENOS raises the limit for OSCUNIT only. The OSCUNIT admission path enforces its own limits (section 7: 4 sections, 2 MiB, 16 capabilities) and ADR 0014 section 4 is amended to say the 2-section limit applies to Binary Artifact v0 only. No byte change here. Upside: v1 stays as vetted. Downside: ADR 0014 gains a second format with its own limits. aienos#277 already does this in practice, because its OSCUNIT path is separate from the Binary Artifact v0 parser.
 - Option B: change the container in a v2 draft to 2 sections (for example merge IR and CODE, or merge ENTRY and CAPS into one). This changes the section table, every section hash and every vector. Downside: a new `container_version`, regenerated vectors, and a less clean layout.
 
-Status of C3: open. No byte or vector change is made for it in v1.
+Status of C3: settled, Option A. The 2-section limit of ADR 0014 section 4 applies to Binary Artifact v0 only, and this container is held to its own section 7 limits (the ADR 0014 amendment "the OSC unit is a second container type" (aienos#277, commit 3da6497), point 3).
 
 ### 15.4 What this reconciliation does and does not show
 
 - It compares text and code at one aienos commit. It does not run anything on AIENOS.
 - The native loader on aienos main today admits Binary Artifact v0 only and has no code for `OSCUNIT\0`. aienos#277 adds admission only (no launch); that becomes true on main only when #277 merges. Passing the host vectors is not evidence of the native loader; only the QEMU gate row exercises the in-kernel path, and nothing here is physical. The vectors were produced by the shell generator and judged by the shell checker and a small C reference.
-- ADR 0013, 0014 and 0017 are all Status Proposed, so a match here is a match with proposals. The status line stays "v1 DRAFT (frozen pending ADR reconciliation)" because C1 and C3 are undecided and C2 is final only when aienos#277 merges.
+- ADR 0013, 0014 and 0017 are all Status Proposed, so a match here is a match with proposals. v1 is frozen against those proposals and the ADR 0014 amendment in aienos#277; if a later ADR change conflicts, the answer is a new `container_version`, never an edit of v1.

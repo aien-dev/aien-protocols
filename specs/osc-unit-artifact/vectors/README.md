@@ -1,6 +1,6 @@
 # OSC unit artifact container v1: conformance vectors
 
-Contract: [`../OSC_UNIT_ARTIFACT.md`](../OSC_UNIT_ARTIFACT.md) (v1 DRAFT, frozen pending ADR reconciliation, 2026-10-08).
+Contract: [`../OSC_UNIT_ARTIFACT.md`](../OSC_UNIT_ARTIFACT.md) (v1 FROZEN, 2026-10-08).
 Each `.unit` file is a complete container. `expected.txt` lists, per vector, the loader mode, supported capability domains, trust anchors present, and the required verdict. Public keys are in [`../keys/`](../keys/): both are THROWAWAY TEST keys derived from fixed labels in [`../tools/make-vectors.sh`](../tools/make-vectors.sh). They are not any AIEN key and must never enter a real anchor set.
 
 Regenerate and check everything: `bash specs/osc-unit-artifact/tools/check-vectors.sh`. Counts: container vectors in `expected.txt`, name lookups in `lookups.txt`, loader-state scenarios in `state.txt` (admission codes 29 and 30), launch-argument scenarios in `launch.txt` (launch code 41, judged by `../tools/osc-launch-check.c`). Launch code 40 is covered by `lookups.txt`; an out-of-range `fn_index` is a loader-side scenario with no byte vector.
