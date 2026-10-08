@@ -251,6 +251,12 @@ cp "$tmp/ir" "$tmp/ir_v4"; patch "$tmp/ir" 7 04 >"$tmp/ir_v4"
 build "$V/r47_slice_kind_in_format_4.unit" test1 1 4 1 2 "$tmp/ir_v4" "$tmp/code" "$tmp/ent" "$tmp/caps0"
 { entry 0 2 5 5 5 0 0 0 0 0 add; entry 1 2 5 12 5 0 0 0 0 60 fill_cells; } >"$tmp/ent_cells"
 build "$V/a05_valid_cells_entry.unit" test1 1 5 1 2 "$tmp/ir" "$tmp/code" "$tmp/ent_cells" "$tmp/caps0"
+# declared-limit bounds (section 4.1 ranges are inclusive): one over each maximum, and all three exactly at the maximum
+m r49_cpu_ticks_over_max.unit 40 01 ca 9a 3b 00 00 00 00
+m r50_stack_over_max.unit 36 10 00 10 00
+m r51_pool_slots_over_max.unit 48 41 00
+patch "$base" 36 00 00 10 00 >"$tmp/at_max1"; patch "$tmp/at_max1" 40 00 ca 9a 3b 00 00 00 00 >"$tmp/at_max2"; patch "$tmp/at_max2" 48 40 00 >"$V/a06_valid_limits_at_max.unit"
+resign "$V/a06_valid_limits_at_max.unit" test1
 
 # ---- expected verdicts ----------------------------------------------------
 # columns: vector mode domains anchors verdict
@@ -311,6 +317,10 @@ irid=$(sha <"$SRC/min.ir")
     echo "r46_section_bounds_u32_wrap.unit qualification 1 T REFUSED SECTION_BOUNDS 11"
     echo "r47_slice_kind_in_format_4.unit qualification 1 T REFUSED ENTRY_TABLE 20"
     echo "r48_entry_hash_shared_case_variant.unit qualification 1 T REFUSED ENTRY_NAME_HASH 32"
+    echo "r49_cpu_ticks_over_max.unit qualification 1 T REFUSED LIMIT_EXCEEDED 14"
+    echo "r50_stack_over_max.unit qualification 1 T REFUSED LIMIT_EXCEEDED 14"
+    echo "r51_pool_slots_over_max.unit qualification 1 T REFUSED LIMIT_EXCEEDED 14"
+    echo "a06_valid_limits_at_max.unit qualification 1 T ACCEPT unit_digest=$(udig "$V/a06_valid_limits_at_max.unit") program_id=$irid"
 } >"$V/expected.txt"
 
 # ---- lookup-by-name expectations (exact match; hash is only an index) ------

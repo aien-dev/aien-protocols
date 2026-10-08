@@ -475,5 +475,5 @@ Status of C3: open. No byte or vector change is made for it in v1.
 ### 15.4 What this reconciliation does and does not show
 
 - It compares text and code at one aienos commit. It does not run anything on AIENOS.
-- The native loader today admits Binary Artifact v0 only. It has no code for `OSCUNIT\0`. Passing vectors are not evidence of the native loader: the vectors were produced by the shell generator and judged by the shell checker and a small C reference, and no kernel or adapter loader has run them.
+- The native loader on aienos main today admits Binary Artifact v0 only and has no code for `OSCUNIT\0`. aienos#277 adds admission only (no launch); that becomes true on main only when #277 merges. Passing the host vectors is not evidence of the native loader; only the QEMU gate row exercises the in-kernel path, and nothing here is physical. The vectors were produced by the shell generator and judged by the shell checker and a small C reference.
 - ADR 0013, 0014 and 0017 are all Status Proposed, so a match here is a match with proposals. The status line stays "v1 DRAFT (frozen pending ADR reconciliation)" because C1 and C3 are undecided and C2 is final only when aienos#277 merges.
