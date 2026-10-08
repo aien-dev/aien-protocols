@@ -9,6 +9,11 @@ VERSIONING.md.
 
 ### Specifications
 
+- `specs/osc-unit-artifact`: OSC Unit Artifact v1 DRAFT (not frozen), the signed
+  container in which an OSC-compiled Omega unit (A64 code plus canonical IR) is
+  admitted and launched by AIENOS or the host adapter. Named refusal codes,
+  launch result shape, 22 refusal and 4 acceptance vectors, shell generator and
+  shell reference checker. No loader implements it yet.
 - `specs/crumb-visible`: Crumb Reader Contract 1.0.0 for the CRB1 visible
   record (wire schema 1), numbered refusal codes, check order, determinism
   rule, and a shared conformance corpus (122 family vectors, 5 edge

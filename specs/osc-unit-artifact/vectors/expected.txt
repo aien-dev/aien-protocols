@@ -1,0 +1,27 @@
+# vector mode domains anchors verdict   (anchors: T TEST anchor present, O OWNER anchor present, - none)
+a01_valid_min.unit qualification 1 T ACCEPT unit_id=084803c232dc44effcc44704c9ed0600dec1231451e0b76693633e98a48d1a1d
+a02_valid_caps_kernel_domain.unit qualification 1 T ACCEPT unit_id=084803c232dc44effcc44704c9ed0600dec1231451e0b76693633e98a48d1a1d
+a03_valid_hosted_domain.unit qualification 1,2 T ACCEPT unit_id=084803c232dc44effcc44704c9ed0600dec1231451e0b76693633e98a48d1a1d
+a04_valid_owner_class.unit release 1 O ACCEPT unit_id=084803c232dc44effcc44704c9ed0600dec1231451e0b76693633e98a48d1a1d
+r01_bad_magic.unit qualification 1 T REFUSED BAD_MAGIC 2
+r02_container_version_2.unit qualification 1 T REFUSED CONTAINER_VERSION 3
+r03_unit_format_6.unit qualification 1 T REFUSED UNIT_FORMAT 5
+r04_abi_version_2.unit qualification 1 T REFUSED ABI_VERSION 6
+r05_unknown_flags.unit qualification 1 T REFUSED UNKNOWN_FLAGS 7
+r06_header_field_reserved.unit qualification 1 T REFUSED HEADER_FIELD 4
+r07_truncated_file.unit qualification 1 T REFUSED TRUNCATED 1
+r08_section_bounds.unit qualification 1 T REFUSED SECTION_BOUNDS 11
+r09_section_overlap.unit qualification 1 T REFUSED SECTION_OVERLAP 12
+r10_section_layout_offset.unit qualification 1 T REFUSED SECTION_LAYOUT 13
+r11_too_many_functions.unit qualification 1 T REFUSED LIMIT_EXCEEDED 14
+r12_code_hash_mismatch.unit qualification 1 T REFUSED CODE_HASH_MISMATCH 16
+r13_ir_hash_mismatch.unit qualification 1 T REFUSED IR_HASH_MISMATCH 15
+r14_bad_signature.unit qualification 1 T REFUSED BAD_SIGNATURE 26
+r15_ir_version_mismatch.unit qualification 1 T REFUSED IR_MALFORMED 19
+r16_entry_table_unaligned.unit qualification 1 T REFUSED ENTRY_TABLE 20
+r17_too_many_functions.unit qualification 1 T REFUSED LIMIT_EXCEEDED 14
+r18_gen_not_representable.unit qualification 1 T REFUSED CAP_GEN_NOT_REPRESENTABLE 28
+r19_test_signer_release.unit release 1 T REFUSED TEST_SIGNER_IN_RELEASE 24
+r20_domain_unsupported.unit qualification 1 T REFUSED CAP_DOMAIN_UNSUPPORTED 27
+r21_untrusted_owner_signer.unit release 1 - REFUSED UNTRUSTED_SIGNER 25
+r22_trailing_byte.unit qualification 1 T REFUSED TRAILING_BYTES 8
