@@ -1,6 +1,6 @@
-# OSC Unit Artifact v1 FROZEN (signed container for an OSC-compiled Omega unit)
+# OSC Unit Artifact v1 DRAFT (frozen pending ADR reconciliation) (signed container for an OSC-compiled Omega unit)
 
-**Status**: v1 FROZEN (2026-10-08, reviewed by session ee6210 at cee67fe). Change control: any change to this container is a new `container_version` (a v2 draft), never an edit of v1.
+**Status**: v1 DRAFT (frozen pending ADR reconciliation). Content reviewed by session ee6210 at cee67fe on 2026-10-08; the final freeze waits on a reconciliation table against AIENOS ADR 0013, 0014, 0017 and the Store and admission docs, which that review did not read. Passing vectors are not evidence of the native loader. Change control: any change to this container is a new `container_version` (a v2 draft), never an edit of v1.
 **Container version field**: `1`
 **License**: Community Specification License 1.0
 **Origin**: `aien-dev/aien-architecture#158` and `#162` (Campaign 3). Shared contract between the AIENOS loader and task work and OSH (the Omega-native shell).
