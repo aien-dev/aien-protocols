@@ -205,6 +205,51 @@ build "$V/r26_entry_name_padding.unit" test1 1 5 1 2 "$tmp/ir" "$tmp/code" "$tmp
 build "$V/r27_entry_name_duplicate.unit" test1 1 5 1 2 "$tmp/ir" "$tmp/code" "$tmp/ent_dup" "$tmp/caps0"
 build "$V/r28_entry_hash_shared_other_name.unit" test1 1 5 1 2 "$tmp/ir" "$tmp/code" "$tmp/ent_hashshare" "$tmp/caps0"
 
+# ---- review-driven vectors (aien-protocols#17 line review) -----------------
+flip() { # FILE OFFSET : copy of FILE with the byte at OFFSET xor 1
+    local b
+    b=$(xxd -p -s "$2" -l 1 "$1")
+    patch "$1" "$2" "$(printf %02x $((0x$b ^ 1)))"
+}
+m r29_total_length_low.unit 20 40 00 00 00
+m r30_section_table_kind.unit 128 09 00
+flip "$base" 700 >"$V/r31_entry_hash_mismatch.unit"
+flip "$base" 806 >"$V/r32_caps_hash_mismatch.unit"
+{ le16 1; zeros 6; cap 3 1 64 1 4 4096 0 4096 1 7; } >"$tmp/caps_rights"
+build "$V/r33_caps_table_bad_rights.unit" test1 1 5 1 2 "$tmp/ir" "$tmp/code" "$tmp/ent" "$tmp/caps_rights"
+m r34_signer_class_3.unit 56 03 00
+m r35_signature_algorithm_2.unit 58 02 00
+# two records: a too-wide generation in domain 1 first, an unsupported domain 2 second.
+# One first refusal for the whole table: all domains are checked before any generation (27, not 28).
+{ le16 2; zeros 6; cap 3 1 1 1 4 4096 0 4096 1 4294967296; cap 3 1 1 1 4 4096 0 4096 2 1; } >"$tmp/caps_order"
+build "$V/r36_domain_before_generation.unit" test1 1 5 1 2 "$tmp/ir" "$tmp/code" "$tmp/ent" "$tmp/caps_order"
+codeplus() { # NAME LE_WORD_HEX : min.code plus one trailing instruction word
+    { cat "$tmp/code"; hex2bin "$2"; } >"$tmp/code_$1"
+    build "$V/$3" test1 1 5 1 2 "$tmp/ir" "$tmp/code_$1" "$tmp/ent" "$tmp/caps0"
+}
+codeplus svc 010000d4 r37_code_svc.unit
+codeplus hvc 020000d4 r38_code_hvc.unit
+codeplus smc 030000d4 r39_code_smc.unit
+codeplus msr 40d01bd5 r40_code_msr_sysreg.unit
+codeplus mrs 40d03bd5 r41_code_mrs_sysreg.unit
+codeplus brk0 000020d4 r42_code_brk_imm0.unit
+codeplus brk15 e00120d4 r43_code_brk_imm15.unit
+{ le16 2; zeros 6; cap 3 2 1 1 4 4096 0 4096 1 7; cap 3 1 1 1 4 4096 0 4096 1 7; } >"$tmp/caps_disorder"
+build "$V/r44_caps_disorder.unit" test1 1 5 1 2 "$tmp/ir" "$tmp/code" "$tmp/ent" "$tmp/caps_disorder"
+# non-canonical signature: same R, S replaced by S + L (L = ed25519 group order)
+L=1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed
+sbe=$(tail -c 32 "$base" | xxd -p -c 32 | fold -w2 | tac | tr -d '\n' | tr a-f A-F)
+sum=$(printf 'obase=16\nibase=16\n%s+%s\n' "$sbe" "$(echo $L | tr a-f A-F)" | bc | tr -d '\\\n')
+sum=$(printf '%064s' "$sum" | tr ' ' 0 | tr A-F a-f)
+{ head -c $((sz - 32)) "$base"; hex2bin "$(echo "$sum" | fold -w2 | tac | tr -d '\n')"; } >"$V/r45_signature_s_not_canonical.unit"
+patch "$base" 184 e0 ff ff ff >"$V/r46_section_bounds_u32_wrap.unit"
+resign "$V/r46_section_bounds_u32_wrap.unit" test1
+# slice entry kinds (bytes / cells) are valid only for unit format 5
+cp "$tmp/ir" "$tmp/ir_v4"; patch "$tmp/ir" 7 04 >"$tmp/ir_v4"
+build "$V/r47_slice_kind_in_format_4.unit" test1 1 4 1 2 "$tmp/ir_v4" "$tmp/code" "$tmp/ent" "$tmp/caps0"
+{ entry 0 2 5 5 5 0 0 0 0 0 add; entry 1 2 5 12 5 0 0 0 0 60 fill_cells; } >"$tmp/ent_cells"
+build "$V/a05_valid_cells_entry.unit" test1 1 5 1 2 "$tmp/ir" "$tmp/code" "$tmp/ent_cells" "$tmp/caps0"
+
 # ---- expected verdicts ----------------------------------------------------
 # columns: vector mode domains anchors verdict
 udig() { head -c 320 "$1" | { printf 'AIENOS-OSC-UNIT-V1\0'; cat; } | sha; }
@@ -243,6 +288,26 @@ irid=$(sha <"$SRC/min.ir")
     echo "r26_entry_name_padding.unit qualification 1 T REFUSED ENTRY_NAME 31"
     echo "r27_entry_name_duplicate.unit qualification 1 T REFUSED ENTRY_NAME_DUPLICATE 33"
     echo "r28_entry_hash_shared_other_name.unit qualification 1 T REFUSED ENTRY_NAME_HASH 32"
+    echo "a05_valid_cells_entry.unit qualification 1 T ACCEPT unit_digest=$(udig "$V/a05_valid_cells_entry.unit") program_id=$irid"
+    echo "r29_total_length_low.unit qualification 1 T REFUSED TOTAL_LENGTH 9"
+    echo "r30_section_table_kind.unit qualification 1 T REFUSED SECTION_TABLE 10"
+    echo "r31_entry_hash_mismatch.unit qualification 1 T REFUSED ENTRY_HASH_MISMATCH 17"
+    echo "r32_caps_hash_mismatch.unit qualification 1 T REFUSED CAPS_HASH_MISMATCH 18"
+    echo "r33_caps_table_bad_rights.unit qualification 1 T REFUSED CAPS_TABLE 21"
+    echo "r34_signer_class_3.unit qualification 1 T REFUSED SIGNER_CLASS 22"
+    echo "r35_signature_algorithm_2.unit qualification 1 T REFUSED SIGNATURE_ALGORITHM 23"
+    echo "r36_domain_before_generation.unit qualification 1 T REFUSED CAP_DOMAIN_UNSUPPORTED 27"
+    echo "r37_code_svc.unit qualification 1 T REFUSED CODE_INSTRUCTION 34"
+    echo "r38_code_hvc.unit qualification 1 T REFUSED CODE_INSTRUCTION 34"
+    echo "r39_code_smc.unit qualification 1 T REFUSED CODE_INSTRUCTION 34"
+    echo "r40_code_msr_sysreg.unit qualification 1 T REFUSED CODE_INSTRUCTION 34"
+    echo "r41_code_mrs_sysreg.unit qualification 1 T REFUSED CODE_INSTRUCTION 34"
+    echo "r42_code_brk_imm0.unit qualification 1 T REFUSED CODE_INSTRUCTION 34"
+    echo "r43_code_brk_imm15.unit qualification 1 T REFUSED CODE_INSTRUCTION 34"
+    echo "r44_caps_disorder.unit qualification 1 T REFUSED CAPS_TABLE 21"
+    echo "r45_signature_s_not_canonical.unit qualification 1 T REFUSED BAD_SIGNATURE 26"
+    echo "r46_section_bounds_u32_wrap.unit qualification 1 T REFUSED SECTION_BOUNDS 11"
+    echo "r47_slice_kind_in_format_4.unit qualification 1 T REFUSED ENTRY_TABLE 20"
 } >"$V/expected.txt"
 
 # ---- lookup-by-name expectations (exact match; hash is only an index) ------
@@ -255,3 +320,35 @@ irid=$(sha <"$SRC/min.ir")
     echo "a01_valid_min.unit qualification 1 T first_byt REFUSED LAUNCH_BAD_ENTRY 40"
     echo "a01_valid_min.unit qualification 1 T missing REFUSED LAUNCH_BAD_ENTRY 40"
 } >"$V/lookups.txt"
+
+# ---- loader-state scenarios (admission codes 29 and 30 need loader state) ---
+# columns: vector mode domains anchors state verdict
+# state: gens=dom:kind:id=currentgen (resource generation the loader holds) | noreserve (reservation fails)
+{
+    echo "# vector mode domains anchors state verdict"
+    echo "a02_valid_caps_kernel_domain.unit qualification 1 T gens=1:3:1=7 ACCEPT unit_digest=$(udig "$V/a02_valid_caps_kernel_domain.unit") program_id=$irid"
+    echo "a02_valid_caps_kernel_domain.unit qualification 1 T gens=1:3:1=8 REFUSED CAP_GENERATION_STALE 29"
+    echo "a01_valid_min.unit qualification 1 T noreserve REFUSED RESOURCE_UNAVAILABLE 30"
+} >"$V/state.txt"
+
+# ---- launch-argument scenarios (launch code 41), judged by tools/osc-launch-check.c ----
+# columns: kinds(comma, OscScalar numbers per register) args(comma, decimal or 0x hex u64) verdict
+{
+    echo "# kinds args verdict   (kinds: 1 bool 2 u8 3 u16 4 u32 5 u64 6 i8 7 i16 8 i32 9 i64 11 bytes 12 cells)"
+    echo "11,5 0x1000,16 OK"
+    echo "11,5 0,0 OK"
+    echo "5,5 7,9 OK"
+    echo "11,5 0x1000 REFUSED LAUNCH_ARG_SHAPE 41"
+    echo "11,5 0,4 REFUSED LAUNCH_ARG_SHAPE 41"
+    echo "12,5 0x1004,2 REFUSED LAUNCH_ARG_SHAPE 41"
+    echo "12,5 0x1000,0x2000000000000000 REFUSED LAUNCH_ARG_SHAPE 41"
+    echo "11,5 0xfffffffffffffff0,32 REFUSED LAUNCH_ARG_SHAPE 41"
+    echo "11,5,11,5 0x1000,16,0x1008,16 OK"
+    echo "12,5,11,5 0x1000,2,0x1008,8 REFUSED LAUNCH_ARG_SHAPE 41"
+    echo "12,5,12,5 0x1000,2,0x1008,2 REFUSED LAUNCH_ARG_SHAPE 41"
+    echo "12,5,12,5 0x1000,2,0x1010,2 OK"
+    echo "12,5,11,5 0x1000,0,0x1000,8 OK"
+    echo "2,5 256,0 REFUSED LAUNCH_ARG_SHAPE 41"
+    echo "6,5 0xffffffffffffff80,0 OK"
+    echo "6,5 0x80,0 REFUSED LAUNCH_ARG_SHAPE 41"
+} >"$V/launch.txt"

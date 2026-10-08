@@ -3,8 +3,8 @@
 Contract: [`../OSC_UNIT_ARTIFACT.md`](../OSC_UNIT_ARTIFACT.md) (v1 DRAFT, not frozen).
 Each `.unit` file is a complete container. `expected.txt` lists, per vector, the loader mode, supported capability domains, trust anchors present, and the required verdict. Public keys are in [`../keys/`](../keys/): both are THROWAWAY TEST keys derived from fixed labels in [`../tools/make-vectors.sh`](../tools/make-vectors.sh). They are not any AIEN key and must never enter a real anchor set.
 
-Regenerate and check everything: `bash specs/osc-unit-artifact/tools/check-vectors.sh` (32 container vectors plus 6 name lookups, 38 checks).
-The valid unit is `../src/min.osc` as compiled by omega `oscc` at `d64ccb3` (`ir_sha256=084803c2...1a1d`). Verdicts were produced by the shell generator and judged by the shell reference checker only; no kernel or adapter loader has run them.
+Regenerate and check everything: `bash specs/osc-unit-artifact/tools/check-vectors.sh`. Counts: container vectors in `expected.txt`, name lookups in `lookups.txt`, loader-state scenarios in `state.txt` (admission codes 29 and 30), launch-argument scenarios in `launch.txt` (launch code 41, judged by `../tools/osc-launch-check.c`). Launch code 40 is covered by `lookups.txt`; an out-of-range `fn_index` is a loader-side scenario with no byte vector.
+The valid unit is `../src/min.osc` as compiled by omega `oscc` at `d64ccb3` (`ir_sha256=084803c2...1a1d`). Verdicts were produced by the shell generator and judged by the shell checker (and the C launch reference) only; no kernel or adapter loader has run them.
 
 | sha256 | file |
 |---|---|
@@ -12,6 +12,7 @@ The valid unit is `../src/min.osc` as compiled by omega `oscc` at `d64ccb3` (`ir
 | `617ccd94e08502b6d99995dfe13af7c0a3c166411b3e15ea605669dc5f216833` | `a02_valid_caps_kernel_domain.unit` |
 | `aad288697f7527d40e1ee38f6b46eacac5e109eaa2fa541886381e3992117d88` | `a03_valid_hosted_domain.unit` |
 | `f837ad840f1f97c5e3b802bfcae02f7f45c6e71db64adcca30eca9c53d1e473c` | `a04_valid_owner_class.unit` |
+| `0212117d13d1df3a4010dfebd9b767908567956203346a0994ce8444f968d02c` | `a05_valid_cells_entry.unit` |
 | `fab5256cf6a05f57e72f64c24f92e8e4bd7cf3f18156f139f32ac028ed2a4362` | `r01_bad_magic.unit` |
 | `5b1b89a87b3246aaef583d0b96acc9fe15a76b7552466fc0932bd6380c67e12b` | `r02_container_version_2.unit` |
 | `819bda98999a593091a9df83ef6f66bc4698a29ab55abc430dd0924028380543` | `r03_unit_format_6.unit` |
@@ -40,5 +41,26 @@ The valid unit is `../src/min.osc` as compiled by omega `oscc` at `d64ccb3` (`ir
 | `1fbd5ee080bed169b6954cf19988c9a8b546e11eae45644f9fb3db8e84de5704` | `r26_entry_name_padding.unit` |
 | `e6413aaa21dab182bcdb9a3ee554a65ac3b64cbbbdbf0092c290a7952ea674bd` | `r27_entry_name_duplicate.unit` |
 | `b5e77bbf38071bc71130be339ca4790c68598598a2cde38edc46ec6b507bf3b7` | `r28_entry_hash_shared_other_name.unit` |
-| `1fa8a3239ed6e85505163618b4bc0bbe7ae500bdc1c330921a20ad6578a365ee` | `expected.txt` |
+| `356b6d7db290a463f577e77009f3df9457ce9429d0d3480329114a236acfdb88` | `r29_total_length_low.unit` |
+| `185ab6712784803d88537fc345b51c4d5625d3eea6a24a5c32bb85cfb32026fa` | `r30_section_table_kind.unit` |
+| `241a57412e7e687701a5c7ee020b6eef2b76d6a350c415f83c905eeb017bbde2` | `r31_entry_hash_mismatch.unit` |
+| `9be16c2b5c25716dd68018161197160e4937bbf628be1eb09af910b10bb566e0` | `r32_caps_hash_mismatch.unit` |
+| `5a93d64db12bff325c81b306c41ef823223a7e941fa2fae6eea894d7d974f1ca` | `r33_caps_table_bad_rights.unit` |
+| `95052025782d40b58581b0d5fe7dbcaff75fb671a2d088cbc1442b9888def50e` | `r34_signer_class_3.unit` |
+| `fbcc5357826aa4613acc5334565a86cd94d87be2205c12618260f55bd14ba916` | `r35_signature_algorithm_2.unit` |
+| `b9328b13ffdec27159c0d3e76ca0bce0e141151ae4423270d7f6f79f5a1dbad8` | `r36_domain_before_generation.unit` |
+| `9114f9fa752fb2c96e24635bc7c8813b0448db899829a77c2ba45d0f6607e0b6` | `r37_code_svc.unit` |
+| `a70fc513bbb8eb41f647a6e76024b9b7e7800055fa3e1e65ce97fcff584ef733` | `r38_code_hvc.unit` |
+| `f5f1a84f60e0e03a690860f84e69f7a7d013afcce48a9e8232540951fb3aa1aa` | `r39_code_smc.unit` |
+| `ef77cee695b16c09c8267d37d3386ea353a72898e67ffbbfd4b1ca8be14bc071` | `r40_code_msr_sysreg.unit` |
+| `b71845184d818181f3fb4b59954ba1d821a9fa04af23cf3884ab5775fb3f9564` | `r41_code_mrs_sysreg.unit` |
+| `4fa443999e51b85b6f746900f0a216557db055e7852d66e70667824e3b276870` | `r42_code_brk_imm0.unit` |
+| `01fa909e77d89583e5cc84ea4deeae92ffa021bb425a60b0a3e14bf9dec8bf74` | `r43_code_brk_imm15.unit` |
+| `63e1fe5889e9b218ab8b9ee49ca4e14d67a0ef95d5f6aa614e9bb385346e178b` | `r44_caps_disorder.unit` |
+| `1ebea8138092aeefab2360ad3d8d9a512c442e9b404bc75c5e4a078c035cba72` | `r45_signature_s_not_canonical.unit` |
+| `27c9787afc78499687b5e5ada5e3313b221065ba44158cdd0c745e8dfbd872be` | `r46_section_bounds_u32_wrap.unit` |
+| `8f6d6d92ea0aa3783e7b6dfe4d915d67faa20f904fed8b898994789bf64baa59` | `r47_slice_kind_in_format_4.unit` |
+| `f67358ef22e3652e5ac7c1081dd16a6cd3519b91d2da344c915287fb48d70a1c` | `expected.txt` |
 | `b9133467aeeba8ed6959e2a1ddbb9e8479b68e9abba295c437b8e82c8ed1e707` | `lookups.txt` |
+| `74ca2630b05656e1df4414657e6b6dba388d6729f91856d1c7a276930eaf67cf` | `state.txt` |
+| `a56db4ab074db44c132a8bef8ab8fbb1c216e536765a036d96690193597c744d` | `launch.txt` |

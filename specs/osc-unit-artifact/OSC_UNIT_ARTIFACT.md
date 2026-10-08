@@ -5,8 +5,8 @@
 **License**: Community Specification License 1.0
 **Origin**: `aien-dev/aien-architecture#158` and `#162` (Campaign 3). Shared contract between the AIENOS loader and task work and OSH (the Omega-native shell).
 **Claims no implementation**: no loader, no packer and no launcher for this container exists. The only things that have run are the shell generator and the shell reference checker in this directory (section 14).
-**Conformance vectors**: [`vectors/`](vectors/), [`vectors/expected.txt`](vectors/expected.txt), built by [`tools/make-vectors.sh`](tools/make-vectors.sh), judged by [`tools/osc-unit-check.sh`](tools/osc-unit-check.sh), proven together by [`tools/check-vectors.sh`](tools/check-vectors.sh)
-**Ground truth read**: omega `osh/osc-ext-bytes` at `d64ccb3` (`src/compiler/osc_ir.c`, `osc_ir.h`, `osc_cg.h`, `osc_rt.h`, `oscc_main.c`, `docs/osc/OSC-1-DESIGN.md` section 7); aienos `main` at `c63d6db` (ADR 0013, 0014, 0017; `native/kernel/artifact/ck_artifact.h`, `native/kernel/core/ipc.h`). Where this draft differs from them, section 2 says so.
+**Conformance vectors**: [`vectors/`](vectors/), [`vectors/expected.txt`](vectors/expected.txt), `lookups.txt`, `state.txt`, `launch.txt`, built by [`tools/make-vectors.sh`](tools/make-vectors.sh), judged by [`tools/osc-unit-check.sh`](tools/osc-unit-check.sh) and [`tools/osc-launch-check.c`](tools/osc-launch-check.c), proven together by [`tools/check-vectors.sh`](tools/check-vectors.sh)
+**Ground truth read**: omega `osh/osc-ext-bytes` at `d64ccb3` (`src/compiler/osc_ir.c:599-610, 689-705`, `osc_ir.h:31-40, 151-176, 252`, `osc_rt.h:32, 70, 85-99`, `osc_cg.c:143-159`, `osc_a64.c:28-93`, `oscc_main.c`, `docs/osc/OSC-1-DESIGN.md` section 7); aienos `main` at `c63d6db` (ADR 0013, 0014, 0017; `native/kernel/artifact/ck_artifact.h`, `native/kernel/core/ipc.h`). Where this draft differs from them, section 2 says so.
 
 ## 1. Purpose and model
 
@@ -31,7 +31,7 @@ This container reuses the encoding style, hash and signature choices of Binary A
 | D3 | ADR 0014 section 2.3: 48-byte capability request, no generation. Handles are issued at admission. | The 48-byte record is kept verbatim (same field rules). 16 bytes are appended: `domain` and `required_generation` (u64). | The request needs to say which generation of a resource it expects, and in which capability domain. See section 6.3. |
 | D4 | ADR 0014 section 6: only a test anchor exists; production trust-anchor set is empty and fails closed. ADR 0017: TRUST-1 offline Owner Root. | Signer class `OWNER` means the key comes from the loader's local OWNER anchor set. v1 supports direct anchors only, no delegation chain. Until M5 provisions an OWNER anchor, every OWNER unit is refused `UNTRUSTED_SIGNER`. | Consistent with fail closed. Delegation from the Owner Root is an open item (section 13). |
 | D5 | ADR 0013: `Handle` is `(generation << 32) \| index`, generation u32, nonzero. Kernel `ipc.h` and `caps` use u32 generations. | Requests carry u64 generations. Domain 1 (kernel IPC table) accepts only values that fit u32; anything wider is refused, never truncated. Domain 2 (hosted authority, u64) is refused by a loader that has no domain 2. | The OSH ABI draft (section 9, rule 3) already separates these domains. The 64 to 32 bridge is out of scope. |
-| D6 | ADR 0014 section 2.4: resource envelope with code, data, stack pages, IPC and syscall limits. | Smaller declared limits (section 7). Page counts are derived by the loader from section sizes. | A unit has no data section, no syscalls of its own and no IPC; its memory is the runtime pool and caller slices. |
+| D6 | ADR 0014 section 2.4: resource envelope with code, data, stack pages, IPC and syscall limits. | Smaller declared limits (section 7). Page counts are derived by the loader from section sizes. | A unit has no data section and no IPC; its memory is the runtime pool and caller slices. It makes no system calls, which is enforced by the code scan (section 8.4) and the launch requirements (section 9.1.1), not assumed. |
 | D7 | ADR 0014 section 4: maximum artifact 16 MiB. | Maximum container 2 MiB. | Limits in section 7 cap a unit well below that. |
 | D8 | ADR 0014 section 7: Admission Receipt v0 binds `ArtifactId` and a payload digest of a Binary Artifact. | No receipt is defined here. The `UnitDigest` of section 5 is the value a future receipt amendment binds, and the value any authorization or execution request binds today (section 5.2). | A receipt change belongs to AIENOS, not to this container. |
 | D9 | ADR 0014 refusal names are `CamelCase`. | Names are `UPPER_SNAKE` with stable numbers (section 8.3). Mapping where one exists: `BAD_MAGIC` = `BadMagic`, `CONTAINER_VERSION` = `UnsupportedVersion`, `ABI_VERSION` = `WrongAbi`, `TRUNCATED` = `Truncated`, `SECTION_OVERLAP` = `SectionOverlap`, `*_HASH_MISMATCH` = `DigestMismatch`, `UNTRUSTED_SIGNER` = `UntrustedSigner`, `BAD_SIGNATURE` = `BadSignature`, `LIMIT_EXCEEDED` = `ResourceLimit`. | This spec is shared with a non-Rust consumer. |
@@ -68,8 +68,8 @@ Total layout, in file order: header (128 bytes), section table (4 x 48 = 192 byt
 | 32 | 2 | `function_count` | `1..=32`; equals entry-table count |
 | 34 | 2 | reserved | zero |
 | 36 | 4 | `max_stack_bytes` | `4096..=1,048,576`, multiple of 16 |
-| 40 | 8 | `cpu_ticks` | `1..=1,000,000,000` (same maximum as ADR 0014) |
-| 48 | 2 | `pool_slots` | `0..=64` (`OSC_RT_SLOTS`); runtime pool slots the unit may hold |
+| 40 | 8 | `cpu_ticks` | `1..=1,000,000,000` (same maximum as ADR 0014). A request for a CPU budget in the scheduler ticks of ADR 0014 section 2.4; the loader clamps it to its own maximum (section 9.1.1 item 5). |
+| 48 | 2 | `pool_slots` | `0..=64`. Limits the array and arena slot pool (`OSC_RT_SLOTS` = 64, `osc_rt.h:32`) the unit may hold. The versioned-handle pools of unit format 4 and up (`OSC_RT_POOLS` = 8 pools of `OSC_POOL_SLOTS` = 16 slots, `osc_rt.h:70`, `osc_ir.h:176`) are fixed by the runtime and are not carried here. |
 | 50 | 2 | reserved | zero |
 | 52 | 4 | reserved | zero |
 | 56 | 2 | `signer_class` | `1` TEST, `2` OWNER; others refused |
@@ -95,8 +95,8 @@ Canonical placement: section 1 at offset 320; each next section at the next mult
 
 1. **IR** (kind 1): the canonical IR encoding as produced by `osc_ir_encode`, 8 to 1,048,576 bytes. Its SHA-256 is `ir_sha256`, the value `oscc` prints, and it is the unit identity (section 5.2).
 2. **CODE** (kind 2): the AArch64 machine code of the whole unit as `osc_cg_compile` emits it, little-endian 32-bit words, 4 to 262,144 bytes (64 pages, the ADR 0014 code limit), length a multiple of 4. Its SHA-256 is `code_sha256`, as `oscc` prints. Position independent: calls between functions are relative `BL`, runtime calls go through `OscRt` in x7. The container has no relocations and no imports.
-3. **ENTRY** (kind 3): `function_count` records of 96 bytes (section 6.1). Length exactly `96 * function_count`.
-4. **CAPS** (kind 4): 8-byte header then `count` records of 64 bytes (section 6.3). Length exactly `8 + 64 * count`, count `0..=16`.
+3. **ENTRY** (kind 3): `function_count` records of 96 bytes (section 6.1). Length exactly `96 * function_count` (otherwise `ENTRY_TABLE`).
+4. **CAPS** (kind 4): 8-byte header then `count` records of 64 bytes (section 6.3). Length exactly `8 + 64 * count`, count `0..=16` (a wrong length is `CAPS_TABLE`, a count above 16 is `LIMIT_EXCEEDED`).
 
 ### 4.4 Signature, last 64 bytes
 
@@ -113,7 +113,7 @@ signature  = Ed25519.Sign( private_key,
                            "AIENOS-OSC-UNIT-SIGNATURE-V1\0" || UnitDigest )
 ```
 
-`file[0..320)` is the header and the section table. That range already contains every section's offset, length and SHA-256, the signer class and the signer fingerprint, so one signature binds all of them. Ed25519 means RFC 8032 pure Ed25519 over exactly that message; Ed25519ph and Ed25519ctx are not interchangeable. Verification is strict, as ADR 0014 requires (no local elliptic-curve implementation; the reviewed verifier dependency of ADR 0014).
+`file[0..320)` is the header and the section table. That range already contains every section's offset, length and SHA-256, the signer class and the signer fingerprint, so one signature binds all of them. Ed25519 means RFC 8032 pure Ed25519 over exactly that message; Ed25519ph and Ed25519ctx are not interchangeable. Verification is strict, as ADR 0014 requires (no local elliptic-curve implementation; the reviewed verifier dependency of ADR 0014). Strict includes rejecting a non-canonical signature: the 32-byte scalar `S` must be below the group order `L`, because the signature bytes are outside `UnitDigest` and an `S + L` variant would otherwise be a second valid file for the same unit (vector `r45`).
 
 ### 5.2 Unit identity
 
@@ -140,17 +140,17 @@ A loader or resolver that is given only an `ir_sha256` may use it to find candid
 | 32 | 1 | `name_len` | `1..=63` |
 | 33 | 63 | `name` | the function name, `name_len` bytes, then zero bytes up to 63 |
 
-Kind numbers are the compiler's `OscScalar` values: `1` bool, `2` u8, `3` u16, `4` u32, `5` u64, `6` i8, `7` i16, `8` i32, `9` i64, `11` bytes (read-only slice pointer), `12` cells (writable u64 slice pointer). `10` (a pool reference) and `0` as an argument kind are refused. A register of kind `11` or `12` must be followed immediately by a register of kind `5` (the slice length), which makes a two-register slice. #### 6.1.1 Names
+Kind numbers are the compiler's `OscScalar` values: `1` bool, `2` u8, `3` u16, `4` u32, `5` u64, `6` i8, `7` i16, `8` i32, `9` i64, `11` bytes (read-only slice pointer), `12` cells (writable u64 slice pointer). `10` (a pool reference) and `0` as an argument kind are refused. Kinds `11` and `12` are valid only when `unit_format_version` is 5 (`osc_ir.c:610`). A register of kind `11` or `12` must be followed immediately by a register of kind `5` (the slice length), which makes a two-register slice. #### 6.1.1 Names
 
 - Charset: a name is 1 to 63 bytes matching `[A-Za-z_][A-Za-z0-9_]*` (ASCII; a subset of UTF-8; no other byte, so NUL, space, control and non-ASCII bytes are refused). The bytes after `name_len` up to the 63rd must be zero. A violation is `ENTRY_NAME`.
-- `name_hash` must equal the hash of the carried name; otherwise `ENTRY_NAME_HASH`. Names within one unit must be pairwise different; otherwise `ENTRY_NAME_DUPLICATE`.
+- `name_hash` must equal the hash of the carried name; otherwise `ENTRY_NAME_HASH`. Names within one unit must be pairwise different, and so must their `name_hash` values; otherwise `ENTRY_NAME_DUPLICATE`.
 - **The hash is only an index.** A launcher may use `name_hash` to find candidate records quickly. It must then compare the requested name to the record's `name` byte for byte, with equal length, case sensitively. A hash match with a different name is not a match: the lookup fails `LAUNCH_BAD_ENTRY`. The hash is never the identity of a function, so a hash collision cannot run the wrong function.
 
 The compiler's reported values for the vector unit are: `add` with registers (u64, u64), returns u64, offset 0; `first_byte` with registers (bytes, u64), returns u64, offset 60.
 
 ### 6.2 Honesty about the entry table
 
-The loader does not parse the IR beyond its first 8 bytes. `function_count`, the entry records and the declared limits are signer attestations, like the code. A loader MUST NOT treat them as verified facts about the code. Entry names are likewise attested, not checked against the IR.
+The loader does not parse the IR beyond its first 8 bytes. `function_count`, the entry records and the declared limits are signer attestations, like the code. A loader MUST NOT treat them as verified facts about the code. Entry names are likewise attested, not checked against the IR. A `code_offset` may point into the middle of a function: the table is not checked against function boundaries, so a launch at a bad offset is a control-flow primitive available to a malicious signer, which is inside the attestation boundary (section 10).
 
 ### 6.3 Capability header and request record
 
@@ -169,7 +169,7 @@ Records are strictly sorted by (`domain`, `resource_kind`, `resource_id`); dupli
 
 Generation rules, the part ADR 0013 forces:
 
-- A loader MUST refuse a request it cannot represent. For domain 1 a nonzero `required_generation` above `0xFFFFFFFF` is refused `CAP_GEN_NOT_REPRESENTABLE`. There is no truncation, wrapping, hashing or "closest value". For a domain the loader does not provide, the refusal is `CAP_DOMAIN_UNSUPPORTED` (checked first).
+- A loader MUST refuse a request it cannot represent. For domain 1 a nonzero `required_generation` above `0xFFFFFFFF` is refused `CAP_GEN_NOT_REPRESENTABLE`. There is no truncation, wrapping, hashing or "closest value". For a domain the loader does not provide, the refusal is `CAP_DOMAIN_UNSUPPORTED`. All records are checked for domain before any record is checked for generation, so one input has one first refusal (section 8.2 step 15; vector `r36`).
 - This spec defines no conversion between a 64-bit hosted generation and a 32-bit kernel generation.
 
 ## 7. Limits
@@ -203,16 +203,19 @@ The loader copies the bytes into protected staging memory before parsing, and ha
 1. File shorter than 128 bytes: `TRUNCATED`.
 2. Magic, then `container_version`, then the fixed header fields and reserved bytes, then `unit_format_version`, then `runtime_abi_version`, then `flags`.
 3. `total_length` in range (`TOTAL_LENGTH`); file shorter than `total_length` (`TRUNCATED`); longer (`TRAILING_BYTES`).
-4. Section table: kinds, flags, reserved (`SECTION_TABLE`); every section inside the file before the signature and not before offset 320 (`SECTION_BOUNDS`); any two nonempty sections overlapping (`SECTION_OVERLAP`); canonical placement and zero gaps (`SECTION_LAYOUT`).
-5. Limits of section 7 and the declared-limit ranges (`LIMIT_EXCEEDED`).
-6. Section SHA-256 values, in section order (`IR_HASH_MISMATCH`, `CODE_HASH_MISMATCH`, `ENTRY_HASH_MISMATCH`, `CAPS_HASH_MISMATCH`).
-7. IR prefix `OSC1IR\0` and version byte equal to `unit_format_version` (`IR_MALFORMED`); entry table rules (`ENTRY_TABLE`, then per record `ENTRY_NAME`, `ENTRY_NAME_HASH`, and after all records `ENTRY_NAME_DUPLICATE`); capability table rules (`CAPS_TABLE`).
-8. `signer_class` (`SIGNER_CLASS`), `signature_algorithm` (`SIGNATURE_ALGORITHM`).
-9. Class TEST in a `release` build: `TEST_SIGNER_IN_RELEASE`. A TEST-signed unit is never admitted by a release build, and a qualification build identifies itself in its boot report as ADR 0014 requires.
-10. Signer lookup: the fingerprint must name a key in the anchor set of the unit's class (`UNTRUSTED_SIGNER`). The key is taken from the anchor set, never from the container.
-11. Signature over `UnitDigest` (`BAD_SIGNATURE`).
-12. Capability policy: `CAP_DOMAIN_UNSUPPORTED`, then `CAP_GEN_NOT_REPRESENTABLE`, then `CAP_GENERATION_STALE`.
-13. Resource reservation (`RESOURCE_UNAVAILABLE`); partial setup is forbidden and every failure releases everything (ADR 0014 section 5).
+4. Section table: kinds, flags, reserved (`SECTION_TABLE`); every section inside the file before the signature and not before offset 320, with overflow-safe `offset + length` (`SECTION_BOUNDS`); any two nonempty sections overlapping (`SECTION_OVERLAP`); canonical placement and zero gaps (`SECTION_LAYOUT`).
+5. Limits of section 7 and the declared-limit ranges (`LIMIT_EXCEEDED`). Section sizes are range-checked here; the CAPS `count` is read here only when the CAPS section is at least 8 bytes, which step 4 has already bounds-checked.
+6. `signer_class` (`SIGNER_CLASS`), `signature_algorithm` (`SIGNATURE_ALGORITHM`). Header work only, done before hashing up to 2 MiB.
+7. Section SHA-256 values, in section order (`IR_HASH_MISMATCH`, `CODE_HASH_MISMATCH`, `ENTRY_HASH_MISMATCH`, `CAPS_HASH_MISMATCH`).
+8. IR prefix `OSC1IR\0` and version byte equal to `unit_format_version` (`IR_MALFORMED`).
+9. Code scan (section 8.4): every code word is in the OSC-emitted subset (`CODE_INSTRUCTION`).
+10. Entry table: its length is exactly `96 * function_count` and its structure (`ENTRY_TABLE`); then per record `ENTRY_NAME`, `ENTRY_NAME_HASH`; after each record, a name or `name_hash` equal to an earlier record's is `ENTRY_NAME_DUPLICATE`. Slice register kinds (11, 12) need `unit_format_version` 5, else `ENTRY_TABLE`.
+11. Capability table: its length is exactly `8 + 64 * count` and its records (`CAPS_TABLE`). A `count` above 16 was already `LIMIT_EXCEEDED` in step 5.
+12. Class TEST in a `release` build: `TEST_SIGNER_IN_RELEASE`. A TEST-signed unit is never admitted by a release build, and a qualification build identifies itself in its boot report as ADR 0014 requires.
+13. Signer lookup: the fingerprint must name a key in the anchor set of the unit's class (`UNTRUSTED_SIGNER`). The key is taken from the anchor set, never from the container.
+14. Signature (`BAD_SIGNATURE`): the 32-byte scalar `S` (second half) must be below the group order `L` (RFC 8032 canonical form; the signature bytes are outside `UnitDigest`, so a non-canonical `S` would otherwise be a second valid file for one unit), then Ed25519 verification over `UnitDigest`.
+15. Capability policy, three whole passes over all records, in this fixed order so one input has one first refusal: (a) every record's `domain` must be supported, else `CAP_DOMAIN_UNSUPPORTED`; (b) every domain-1 `required_generation` must fit 32 bits, else `CAP_GEN_NOT_REPRESENTABLE`; (c) every pinned generation must equal the loader's current generation of that resource, else `CAP_GENERATION_STALE`.
+16. Resource reservation (`RESOURCE_UNAVAILABLE`); partial setup is forbidden and every failure releases everything (ADR 0014 section 5). The loader enforces its own hard maxima for stack, ticks, pool slots and pages; `max_stack_bytes`, `cpu_ticks` and `pool_slots` are signer-declared requests that can only lower what the loader would give, never raise it.
 
 A unit that passes is admitted. The loader never executes the unit before this point. It does not recompile, verify the IR, or compare code against IR (section 10).
 
@@ -253,10 +256,21 @@ A unit that passes is admitted. The loader never executes the unit before this p
 | 31 | `ENTRY_NAME` | name length not 1 to 63, byte outside the charset, or nonzero padding |
 | 32 | `ENTRY_NAME_HASH` | `name_hash` does not equal the hash of the carried name |
 | 33 | `ENTRY_NAME_DUPLICATE` | two entry records carry the same name |
+| 34 | `CODE_INSTRUCTION` | a code word outside the OSC-emitted instruction subset (section 8.4), or a `brk` whose immediate is not a trap code 1 to 14 |
 | 40 | `LAUNCH_BAD_ENTRY` | `fn_index` not in the entry table, or no record's name equals the requested name exactly |
 | 41 | `LAUNCH_ARG_SHAPE` | argument count, kind, slice pointer, length, alignment or overlap invalid (section 9.2) |
 
-Numbers 34 to 39 and 42 to 255 are reserved. A loader receiving a code it does not know treats it as a failed admission.
+Numbers 35 to 39 and 42 to 255 are reserved. A loader receiving a code it does not know treats it as a failed admission.
+
+### 8.4 Code scan: the instruction subset
+
+Admission decodes every 32-bit word of CODE and refuses the unit (`CODE_INSTRUCTION`) if any word is not in the subset the OSC back end can emit. This is what makes "a unit makes no system calls of its own" a checked property instead of an attested one: no word that is a supervisor call (`SVC`), hypervisor call (`HVC`), secure monitor call (`SMC`), system register access (`MSR`, `MRS`), system instruction or barrier, load/store exclusive, FP/SIMD instruction or any other encoding outside the table can pass.
+
+The allowed set is exactly the set of encodings that `osc_a64_decode` accepts (`src/compiler/osc_a64.c:28-72` operation table, `76-93` variable-field masks, decode at `245-274`): a word is allowed when, for some table entry, `word & ~varmask(class) == base` and re-encoding the decoded fields reproduces the word. The operations are `add/sub/adds/subs` (shifted register and immediate), `madd`, `msub`, `smulh`, `umulh`, `sdiv`, `udiv`, `lslv`, `lsrv`, `asrv`, `and`, `orr`, `eor`, `orn`, `sbfm`, `ubfm`, `csinc`, `movz`, `movn`, `movk`, `ldr` and `str` (64-bit unsigned offset), `stp` and `ldp` (offset, pre, post), `ldrb` (register), `b`, `bl`, `b.cond`, `cbz`, `cbnz`, `blr`, `ret`, and `brk`.
+
+`brk` needs a rule of its own, because the compiler does emit it: after every call to the runtime trap service it places `brk #code` as an unreachable guard (`osc_cg.c:154-159`, `trap_seq`; `osc_rt_trap` does not return). A `brk` is allowed only when its 16-bit immediate is a trap code `1..=14`. Any other `brk` is refused. When the unit's execution actually reaches a `brk` it has faulted: the platform reports `OUTCOME_UNKNOWN` with reason `FAULT` (section 9.3), never `TRAPPED`.
+
+Notes for implementers. The compiler's own decoder performs the round-trip check and is the reference. The vector checker in `tools/osc-unit-check.sh` implements the class-mask match only (it refuses every vector that the full rule refuses, but it is weaker than a loader must be). The scan is on the signed, hash-verified copy of the code. Allowing a word says nothing about what the code does; only that it cannot ask the platform for anything except through `OscRt` (`blr`) and cannot touch system state.
 
 ## 9. Launch and results
 
@@ -264,16 +278,34 @@ Numbers 34 to 39 and 42 to 255 are reserved. A loader receiving a code it does n
 
 Arguments in `x0..x5` in `reg_kind` order, a slice as two consecutive registers (pointer, length). The hidden runtime pointer `OscRt *` is in `x7`; the function's frame stores it in slot 0. Runtime services (allocation, release, traps, arenas, pools) are reached through `ldr x16, [x7 slot]` then the vtable then `blr x16`, at the fixed offsets of `runtime_abi_version` 1. The return value is one u64 in `x0` (bool as 0 or 1, narrower integers canonically extended). Calls between functions of the unit are `BL`. The launcher provides a stack of at least `max_stack_bytes`.
 
+### 9.1.1 Launch requirements (the platform enforces these, the container cannot attest them)
+
+1. **No system calls from unit context.** The platform refuses (never services) an `SVC` executed while unit code runs. The task that hosts unit code has an empty system-call mask except the single runtime entry the platform provides; a `SVC` from unit context terminates the activation as `OUTCOME_UNKNOWN` with reason `FAULT`. The capability table delivered to that task is exactly the granted subset of the CAPS section and nothing else. Section 8.4 is the first lock (no `SVC` word can be admitted); this is the second, independent lock.
+2. **`OscRt` is not writable by the unit.** The runtime table `OscRt` (function pointers at offsets 0 to 96, `osc_rt.h:85-99`) and the runtime code it points to live outside memory the unit can write or address as data, either in a separate address space or behind a gate. The unit receives `x7` as an opaque pointer it may only pass back and call through; where the table is mapped into the unit's space it is read-only. `osc_rt.h` also embeds the cell pool next to the function pointers; a launcher MUST NOT give the unit a mapping in which writes to its pool arrays reach the function pointers. This is a launch blocker: a launcher that cannot satisfy it must not launch.
+3. **The trap service does not return** into unit code. Reaching the `brk` guard after it is a fault (section 8.4).
+4. **Ranges are the caller's.** Every `bytes` range must lie wholly in memory the caller may read, and be mapped read-only for the unit; every `cells` range wholly in memory the caller may write. Section 9.2 checks shape; this checks ownership (the host `osc_native.c` runs only the shape check).
+5. **Platform limits.** The platform enforces its own stack, tick and page limits (section 8.2 step 16). Stack overflow, tick exhaustion and wild accesses surface as `OUTCOME_UNKNOWN` by design. `cpu_ticks` counts the AIENOS scheduler CPU ticks of the resource envelope in ADR 0014 section 2.4 (the unit is defined by AIENOS ABI v1, not here); a host adapter documents its own mapping. Worst-case stack use is not derivable from the container: a function frame is `8 * (nvregs + 1)` bytes rounded to 16 (up to 3856 for 480 virtual registers) plus 16 per call, nested up to the call depth the compiler permits, so `4096` is a minimum for declaration, not a safe value.
+
 ### 9.2 Argument checks before the first instruction
 
-The launcher refuses `LAUNCH_ARG_SHAPE` unless: the number of registers equals `nregs`; each scalar fits its kind; for a slice, a zero length with a null pointer is allowed, a nonzero length needs a nonnull pointer, `cells` pointers are 8-byte aligned, `pointer + size` does not overflow, and no `cells` range overlaps any other slice range (the rule of `osc_ir_slice_args_ok`). Borrows last for that one call; the runtime keeps no reference.
+The launcher refuses `LAUNCH_ARG_SHAPE` unless every item holds. It is the rule of `osc_ir_slice_args_ok` (`osc_ir.c:689-705` at `d64ccb3`), restated exactly, plus the scalar rule:
+
+1. The number of argument registers equals `nregs` (a slice counts two).
+2. Each scalar register fits its kind: bool 0 or 1; u8, u16, u32 within their range; i8, i16, i32 are the canonical sign extension of the value in 64 bits (so `0xffffffffffffff80` is a valid i8, `0x80` is not).
+3. For each slice, with pointer `ptr` and length `n` taken from its two registers, and `size = n` for `bytes` and `size = n * 8` for `cells` (computed in 64 bits):
+   a. for `cells`, `n` must not exceed `UINT64_MAX / 8` (so `n * 8` cannot wrap), and if `n` is nonzero `ptr` must be 8-byte aligned;
+   b. if `n` is nonzero, `ptr` must be nonnull; a zero length with a null pointer is allowed and the pointer is never dereferenced;
+   c. `size` must not exceed `UINT64_MAX - ptr` (the range must not wrap).
+4. Overlap, over every ordered pair of distinct slices `p`, `q`: two `bytes` ranges may overlap each other freely. Any pair in which at least one is `cells` is refused if their ranges `[ptr, ptr + size)` intersect. A pair is skipped when either `size` is zero (a zero-length range overlaps nothing), or when the other slice's own size computation would wrap; that other slice is refused by item 3 on its own turn.
+
+Borrows last for that one call; the runtime keeps no reference. The vectors in `vectors/launch.txt` exercise each item.
 
 ### 9.3 Result shape
 
 Every admission-and-launch attempt ends in exactly one of four result classes. The classes are closed: a new reason or detail never creates a fifth class.
 
 - `RETURNED(value u64)`: the entry function returned. `value` is `x0`. A void function reports 0.
-- `TRAPPED(trap_code u8)`: the unit called the runtime trap service with a code in `1..=14` (`OVERFLOW` 1, `DIV0` 2, `BOUNDS` 3, `LOOP_BOUND` 4, `CAST` 5, `OOM` 6, `SHIFT` 7, `RUNTIME` 8, `REQUIRES` 9, `ENSURES` 10, `ARENA_FULL` 11, `STALE` 12, `POOL_FULL` 13, `RETIRED` 14, the table of `OSC_TRAP_*` at `d64ccb3` for unit formats 1 to 5). Traps are numbered results, never process exit. The launcher unwinds the call and releases the unit's runtime state; no further unit instruction runs.
+- `TRAPPED(trap_code u8)`: the unit called the runtime trap service with a code in `1..=14` (`OVERFLOW` 1, `DIV0` 2, `BOUNDS` 3, `LOOP_BOUND` 4, `CAST` 5, `OOM` 6, `SHIFT` 7, `RUNTIME` 8, `REQUIRES` 9, `ENSURES` 10, `ARENA_FULL` 11, `STALE` 12, `POOL_FULL` 13, `RETIRED` 14, the table `OSC_TRAP_*` at `osc_ir.h:151-170` of `d64ccb3`; `OSC_TRAP_MAX` is 14). A launcher accepts any code in `1..=14` for every unit format: the runtime table is shared by all formats of `runtime_abi_version` 1, and a unit of an older format simply never raises the newer codes). Traps are numbered results, never process exit. The launcher unwinds the call and releases the unit's runtime state; no further unit instruction runs.
 - `REFUSED_AT_ADMISSION(code)`: any code of section 8.3; no unit instruction ran.
 - `OUTCOME_UNKNOWN`: unit instructions started and neither a return nor a numbered trap was observed. Examples (each has an `unknown_reason`): `cpu_ticks` exhausted, a CPU fault in the unit (stack overflow, wild access), the task destroyed or the machine reset mid-run, or a trap code outside the table for the unit's format. A caller MUST NOT retry on `OUTCOME_UNKNOWN` as if nothing happened (same rule as OSH Platform ABI section 10). It carries a fixed-width `unknown_reason` (u8), see below.
 
@@ -295,7 +327,7 @@ What the container does prove: these exact bytes, in this exact table, were sign
 - The key never comes from the container. A fingerprint only selects among local anchors.
 - Domain separation tags make a signature on a unit unusable as an ADR 0014 artifact signature or a receipt signature.
 - No revocation, rollback protection or version monotonicity exists in v1. A validly signed old unit stays admissible while its signer is trusted. Revocation is trust-anchor policy (open item).
-- Machine code runs in an isolated EL0 task with only the runtime services and the capabilities admission grants. The container does not sandbox; the isolation is the loader's (ADR 0013, 0014).
+- Machine code runs in an isolated EL0 task with only the runtime services and the capabilities admission grants. The container does not sandbox; the isolation is the loader's (ADR 0013, 0014). Two locks stop a unit from using system calls: admission refuses every code word outside the OSC-emitted subset (section 8.4), and the platform refuses `SVC` from unit context (section 9.1.1). The runtime table is not writable by the unit (section 9.1.1 item 2): a unit that could overwrite `trap` or `alloc` would run its own code in the runtime context.
 - An unsound signer is outside the model. The IR is not checked against the code (section 10), so the signer's key custody is the root of trust for what the code does.
 - Throwaway keys in the vectors protect nothing and must never be added to any anchor set of a real build.
 
@@ -306,17 +338,19 @@ GPU code and GPU loading; recursion (OSC has none); dynamic linking, relocations
 ## 13. Open items before freeze
 
 1. Answered by the OSH owner (ee6210, aien-protocols#17 review comment) and applied in this draft: (a) four result classes kept, `unknown_reason` added as a diagnostic only (section 9.3); (b) bounded exact-match names carried, hash is an index only (section 6.1.1); (c) execution and authorization bind to `UnitDigest`, `ir_sha256` is program identity only (section 5.2). The line-by-line review from the OSH owner is still pending; nothing here is frozen.
-2. `OscRt` vtable offsets are fixed by `runtime_abi_version` 1. Confirmed by the OSH owner: `src/compiler/osc_rt.h` and `osc_rt.c` are byte-identical between omega `main` and the OSC-EXT-BYTES head `d64ccb3` (empty `git diff`), so OSC-EXT-BYTES does not change the runtime table. Any future change to it bumps `runtime_abi_version`, and unknown versions are refused.
+2. `OscRt` vtable offsets are fixed by `runtime_abi_version` 1. Confirmed by the OSH owner: `src/compiler/osc_rt.h` and `osc_rt.c` are byte-identical between omega `main` and the OSC-EXT-BYTES head `d64ccb3` (empty `git diff`), so OSC-EXT-BYTES does not change the runtime table (`osc_rt.h:85-99`, offsets 0 to 96). Any future change to it bumps `runtime_abi_version`, and unknown versions are refused.
 3. How AIENOS hosts `OscRt`: a Binary Artifact v0 task that receives the unit, or a new admission path. This spec does not choose.
 4. Whether the loader should cross-check `function_count` against the IR (needs parsing the struct table) in v2.
 5. OWNER delegation from the TRUST-1 Owner Root (ADR 0017) and revocation.
 6. The numbering in section 8.3 freezes with the container.
-7. Expected verdicts in `vectors/` were produced by the shell generator and judged by the shell checker written from this text. No kernel or adapter loader has run them.
+7. Expected verdicts in `vectors/` were produced by the shell generator and judged by the shell checker and a small C reference written from this text. No kernel or adapter loader has run them. The shell checker implements the instruction subset as a mask match only (section 8.4).
+8. Resolved by the line review (OSH owner, review of 1e49b3f, later commits): launch-argument rule restated exactly after `osc_ir_slice_args_ok` (9.2); one fixed capability-policy order (8.2 step 15); instruction subset and the `SVC` and `OscRt` launch locks (8.4, 9.1.1); entry kinds 11 and 12 need unit format 5; equal `name_hash` refused; canonical signature `S < L`; signer class and algorithm checked before hashing; length mismatches of ENTRY and CAPS are `ENTRY_TABLE` and `CAPS_TABLE`; `pool_slots` and `cpu_ticks` defined.
+9. Found while fixing the review: the compiler emits `brk #trapcode` after every trap call (`osc_cg.c:154-159`), so `brk` cannot be banned outright as the review suggested; it is allowed only with an immediate of 1 to 14.
 
 ## 14. Conformance
 
 A loader conforms when, for every line of `vectors/expected.txt`, run in the stated mode, with the stated capability domains and anchors, it returns the stated verdict: `ACCEPT` with `unit_digest` equal to `UnitDigest` of section 5.1 and `program_id` equal to the IR section hash, or `REFUSED` with that name and number. Anchors: `T` the TEST key in `keys/test1.pub` is the TEST anchor, `O` the key in `keys/owner1.pub` is the OWNER anchor, `-` neither. Both keys are throwaway TEST keys derived from fixed labels in `tools/make-vectors.sh`. `vectors/lookups.txt` lists name lookups on an admitted unit: the exact name returns its `fn_index`, anything else (including a different case or prefix) is `LAUNCH_BAD_ENTRY`; an implementation must not select a function by `name_hash` alone.
 
-`tools/check-vectors.sh` regenerates the vectors into a scratch directory, requires them byte-identical to the committed ones, and runs the reference checker over every line. Requires bash, xxd, sha256sum and OpenSSL 3 with Ed25519.
+`tools/check-vectors.sh` regenerates the vectors into a scratch directory, requires them byte-identical to the committed ones, then runs: the reference checker over every line of `expected.txt` (counts in `vectors/README.md`), `lookups.txt` (exact-name lookups), `state.txt` (admission codes 29 and 30, which need loader state, supplied as scenario input), and `tools/osc-launch-check.c` over `launch.txt` (launch code 41, a dynamic rule that has no static container; launch code 40 is exercised by `lookups.txt` and, for an out-of-range `fn_index`, is a loader-side scenario with no byte vector). Requires bash, xxd, sha256sum, bc, a C99 compiler and OpenSSL 3 with Ed25519. The shell checker implements the instruction subset as a class-mask match; the normative rule (section 8.4) adds the decoder round trip, which the shell checker does not.
 
-The vector unit is `src/min.osc` compiled by omega `oscc` at `d64ccb3`: `ir_sha256=084803c232dc44effcc44704c9ed0600dec1231451e0b76693633e98a48d1a1d`, `code_sha256=6163612fd91c0ce8eb8126d4b38534867428704d346795a5e369055eef10fcdb`, `funcs=2`, IR version byte 5 (it uses a `bytes` parameter).
+The vector unit is `src/min.osc` compiled by omega `oscc` at `d64ccb3`: `ir_sha256=084803c232dc44effcc44704c9ed0600dec1231451e0b76693633e98a48d1a1d`, `code_sha256=6163612fd91c0ce8eb8126d4b38534867428704d346795a5e369055eef10fcdb`, `funcs=2`, IR version byte 5 (it uses a `bytes` parameter). Its code ends with a `brk #3` trap guard, which section 8.4 permits.

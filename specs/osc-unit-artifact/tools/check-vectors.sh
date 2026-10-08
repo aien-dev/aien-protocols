@@ -25,5 +25,21 @@ while read -r name mode domains anchors lname rest; do
     n=$((n + 1))
     if [ "$got" != "$rest" ]; then echo "MISMATCH lookup $name $lname: want '$rest' got '$got'" >&2; fail=1; fi
 done <"$here/../vectors/lookups.txt"
+while read -r name mode domains anchors state rest; do
+    case $name in '#'*|'') continue ;; esac
+    case $state in
+    gens=*) got=$(OSC_STATE_GENS="${state#gens=}" bash "$here/osc-unit-check.sh" "$here/../vectors/$name" "$mode" "$domains" "$anchors") ;;
+    noreserve) got=$(OSC_STATE_NORESERVE=1 bash "$here/osc-unit-check.sh" "$here/../vectors/$name" "$mode" "$domains" "$anchors") ;;
+    esac
+    n=$((n + 1))
+    if [ "$got" != "$rest" ]; then echo "MISMATCH state $name $state: want '$rest' got '$got'" >&2; fail=1; fi
+done <"$here/../vectors/state.txt"
+cc -std=c99 -O2 -Wall -Wextra -Werror -o "$tmp/launch" "$here/osc-launch-check.c"
+while read -r kinds args rest; do
+    case $kinds in '#'*|'') continue ;; esac
+    got=$("$tmp/launch" "$kinds" "$args")
+    n=$((n + 1))
+    if [ "$got" != "$rest" ]; then echo "MISMATCH launch $kinds $args: want '$rest' got '$got'" >&2; fail=1; fi
+done <"$here/../vectors/launch.txt"
 [ $fail -eq 0 ] || exit 1
 echo "OSC_UNIT_VECTORS_PASS $n vectors"
