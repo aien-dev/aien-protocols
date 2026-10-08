@@ -3,27 +3,27 @@
     "generated": {
       "children": [
         {
-          "digest": "0aea6092b5a33cb1063d1e20a5999712d9639a2d7c4bb7f0eda0f88be94ff4d2",
-          "last_commit": "",
+          "digest": "30461c6a4663c34e646f374731c54c77e5f76734d2bcbcb9e1e1eb8759940a75",
+          "last_commit": "46bd139",
           "name": "tools",
           "purpose": "OSH platform ABI draft (tools)"
         },
         {
-          "digest": "3cd0c13e156f2f8d96ea7b4afda475521e8df1bb39db2dcbcf5433155e36bf2f",
-          "last_commit": "",
+          "digest": "3b72e3d6b7f5a9cf11bd7c6a9cabb5a86ce21ff82bfc597cd41036d35589564c",
+          "last_commit": "46bd139",
           "name": "vectors",
           "purpose": "OSH platform ABI draft (vectors)"
         }
       ],
-      "children_root": "sha256:3eeb37f0d4acc606bb93d8b490346ba125400e8dc0c81f82c968d090accef105",
-      "compiled_at": "2026-10-08T00:29:27Z",
+      "children_root": "sha256:5319aa920efba172ed1d9424c2ade065db8d56454fa0498742a5e1c67042af42",
+      "compiled_at": "2026-10-08T00:29:37Z",
       "compiler": "crumb-compile/1",
-      "digest": "sha256:f958156ae61b8c63c386884e6d8b6c6a4b1d2492bb4e5a3ac1e4d28abd2d1c5d",
+      "digest": "sha256:6c499f9235bcdb37d78328ad41945dfa0d820853e4c85dedc98bb266b8e289ad",
       "evidence_files": 0,
       "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "files": 0,
-      "generated_at_commit": "3a4cdbe8d360a2e1ddb3e8b108684048b9d4ba10",
-      "source_tree": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      "files": 23,
+      "generated_at_commit": "46bd139ac94a2d5ead5d667217589665a3f54b89",
+      "source_tree": "sha256:ce6bfefca52fb55212eaa1f76567e5a12163c8cbc7258a587fa9a2948cc83651"
     }
   },
   "name": "osh-platform",
