@@ -195,6 +195,7 @@ ent_with "$tmp/ent_empty" 1 2 5 11 5 0 0 0 0 60 ""
 ent_with "$tmp/ent_long" 1 2 5 11 5 0 0 0 0 60 first_byte "" 64
 ent_with "$tmp/ent_dup" 1 2 5 11 5 0 0 0 0 60 add
 ent_with "$tmp/ent_hashshare" 1 2 5 11 5 0 0 0 0 60 first_byte "$(namehash add)"
+ent_with "$tmp/ent_hashshare_case" 1 2 5 11 5 0 0 0 0 60 ADD "$(namehash add)"
 entries_min >"$tmp/ent_pad"
 # nonzero byte in the padding after "add" (entry 0: name_len at 32, name at 33..35, padding from 36)
 patch "$tmp/ent_pad" 38 41 >"$tmp/ent_pad2"
@@ -204,6 +205,7 @@ build "$V/r25_entry_name_too_long.unit" test1 1 5 1 2 "$tmp/ir" "$tmp/code" "$tm
 build "$V/r26_entry_name_padding.unit" test1 1 5 1 2 "$tmp/ir" "$tmp/code" "$tmp/ent_pad2" "$tmp/caps0"
 build "$V/r27_entry_name_duplicate.unit" test1 1 5 1 2 "$tmp/ir" "$tmp/code" "$tmp/ent_dup" "$tmp/caps0"
 build "$V/r28_entry_hash_shared_other_name.unit" test1 1 5 1 2 "$tmp/ir" "$tmp/code" "$tmp/ent_hashshare" "$tmp/caps0"
+build "$V/r48_entry_hash_shared_case_variant.unit" test1 1 5 1 2 "$tmp/ir" "$tmp/code" "$tmp/ent_hashshare_case" "$tmp/caps0"
 
 # ---- review-driven vectors (aien-protocols#17 line review) -----------------
 flip() { # FILE OFFSET : copy of FILE with the byte at OFFSET xor 1
@@ -308,6 +310,7 @@ irid=$(sha <"$SRC/min.ir")
     echo "r45_signature_s_not_canonical.unit qualification 1 T REFUSED BAD_SIGNATURE 26"
     echo "r46_section_bounds_u32_wrap.unit qualification 1 T REFUSED SECTION_BOUNDS 11"
     echo "r47_slice_kind_in_format_4.unit qualification 1 T REFUSED ENTRY_TABLE 20"
+    echo "r48_entry_hash_shared_case_variant.unit qualification 1 T REFUSED ENTRY_NAME_HASH 32"
 } >"$V/expected.txt"
 
 # ---- lookup-by-name expectations (exact match; hash is only an index) ------

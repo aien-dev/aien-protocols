@@ -60,7 +60,8 @@ The valid unit is `../src/min.osc` as compiled by omega `oscc` at `d64ccb3` (`ir
 | `1ebea8138092aeefab2360ad3d8d9a512c442e9b404bc75c5e4a078c035cba72` | `r45_signature_s_not_canonical.unit` |
 | `27c9787afc78499687b5e5ada5e3313b221065ba44158cdd0c745e8dfbd872be` | `r46_section_bounds_u32_wrap.unit` |
 | `8f6d6d92ea0aa3783e7b6dfe4d915d67faa20f904fed8b898994789bf64baa59` | `r47_slice_kind_in_format_4.unit` |
-| `f67358ef22e3652e5ac7c1081dd16a6cd3519b91d2da344c915287fb48d70a1c` | `expected.txt` |
+| `da9ced22c659d5ee25d60ecfe61f2327c7311123a416d753b686425e1596fd35` | `r48_entry_hash_shared_case_variant.unit` |
+| `2e4698f8dda773c249ce7cd351919c9523da77cb7f8b0dca00f38744ec86d5b0` | `expected.txt` |
 | `b9133467aeeba8ed6959e2a1ddbb9e8479b68e9abba295c437b8e82c8ed1e707` | `lookups.txt` |
 | `74ca2630b05656e1df4414657e6b6dba388d6729f91856d1c7a276930eaf67cf` | `state.txt` |
 | `a56db4ab074db44c132a8bef8ab8fbb1c216e536765a036d96690193597c744d` | `launch.txt` |

@@ -1,6 +1,6 @@
 # OSC Unit Artifact v1 DRAFT (frozen pending ADR reconciliation) (signed container for an OSC-compiled Omega unit)
 
-**Status**: v1 DRAFT (frozen pending ADR reconciliation). Content reviewed by session ee6210 at cee67fe on 2026-10-08. The reconciliation table against AIENOS ADR 0013, 0014, 0017 and the Store and admission design is section 15 (aienos at c63d6db8e9ac82592899ab0c2cbd9e2a76e6c7b2); it found two open decisions (section 15.3), so the final freeze still waits. Passing vectors are not evidence of the native loader. Change control: any change to this container is a new `container_version` (a v2 draft), never an edit of v1.
+**Status**: v1 DRAFT (frozen pending ADR reconciliation). Content reviewed by session ee6210 at cee67fe on 2026-10-08. The reconciliation table against AIENOS ADR 0013, 0014, 0017 and the Store and admission design is section 15 (aienos at c63d6db8e9ac82592899ab0c2cbd9e2a76e6c7b2); it found three open decisions (section 15.3), so the final freeze still waits. Passing vectors are not evidence of the native loader. Change control: any change to this container is a new `container_version` (a v2 draft), never an edit of v1.
 **Container version field**: `1`
 **License**: Community Specification License 1.0
 **Origin**: `aien-dev/aien-architecture#158` and `#162` (Campaign 3). Shared contract between the AIENOS loader and task work and OSH (the Omega-native shell).
@@ -146,6 +146,7 @@ Kind numbers are the compiler's `OscScalar` values: `1` bool, `2` u8, `3` u16, `
 - Charset: a name is 1 to 63 bytes matching `[A-Za-z_][A-Za-z0-9_]*` (ASCII; a subset of UTF-8; no other byte, so NUL, space, control and non-ASCII bytes are refused). The bytes after `name_len` up to the 63rd must be zero. A violation is `ENTRY_NAME`.
 - `name_hash` must equal the hash of the carried name; otherwise `ENTRY_NAME_HASH`. Names within one unit must be pairwise different, and so must their `name_hash` values; otherwise `ENTRY_NAME_DUPLICATE`.
 - **The hash is only an index.** A launcher may use `name_hash` to find candidate records quickly. It must then compare the requested name to the record's `name` byte for byte, with equal length, case sensitively. A hash match with a different name is not a match: the lookup fails `LAUNCH_BAD_ENTRY`. The hash is never the identity of a function, so a hash collision cannot run the wrong function.
+- **Equal `name_hash`, different name.** The admission rule is: refuse with `ENTRY_NAME_DUPLICATE` (this spec is not silent on it). Two records whose names differ and whose hashes are both correct would need a 128-bit SHA-256 collision, which no vector can contain. Any byte-level attempt (a record that carries another record's hash with a different name, including a case variant) fails `ENTRY_NAME_HASH` first, because step 10 checks the hash of each record before the duplicate test. Vectors r28 and r48 cover those cases. The equal-hash clause of the duplicate test is therefore defence in depth that no conformance vector can distinguish from its absence.
 
 The compiler's reported values for the vector unit are: `add` with registers (u64, u64), returns u64, offset 0; `first_byte` with registers (bytes, u64), returns u64, offset 60.
 
@@ -257,7 +258,7 @@ A unit that passes has cleared every static check of this section (in ADR 0014 t
 | 30 | `RESOURCE_UNAVAILABLE` | reservation of pages, stack, task slot or capability slots failed |
 | 31 | `ENTRY_NAME` | name length not 1 to 63, byte outside the charset, or nonzero padding |
 | 32 | `ENTRY_NAME_HASH` | `name_hash` does not equal the hash of the carried name |
-| 33 | `ENTRY_NAME_DUPLICATE` | two entry records carry the same name |
+| 33 | `ENTRY_NAME_DUPLICATE` | two entry records carry the same name or the same `name_hash` |
 | 34 | `CODE_INSTRUCTION` | a code word outside the OSC-emitted instruction subset (section 8.4), or a `brk` whose immediate is not a trap code 1 to 14 |
 | 40 | `LAUNCH_BAD_ENTRY` | `fn_index` not in the entry table, or no record's name equals the requested name exactly |
 | 41 | `LAUNCH_ARG_SHAPE` | argument count, kind, slice pointer, length, alignment or overlap invalid (section 9.2) |
@@ -350,7 +351,7 @@ GPU code and GPU loading; recursion (OSC has none); dynamic linking, relocations
 9. Found while fixing the review: the compiler emits `brk #trapcode` after every trap call (`osc_cg.c:154-159`), so `brk` cannot be banned outright as the review suggested; it is allowed only with an immediate of 1 to 14.
 
 10. ADR 0014 reaches `Admitted` only after a canary run. This container defines no canary; AIENOS must say whether a unit is canaried and with what entry and arguments (section 8.2 closing paragraph, section 15.1 row 48).
-11. Two reconciliation conflicts need a decision before the final freeze: C1 (meaning of `required_generation`) and C2 (which test keys a native qualification build trusts). Both are in section 15.3.
+11. Three reconciliation conflicts need a decision before the final freeze: C1 (meaning of `required_generation`), C2 (which test keys a native qualification build trusts) and C3 (ADR 0014 limit of 2 sections against the 4 sections of this container). All are in section 15.3.
 
 ## 14. Conformance
 
@@ -386,7 +387,7 @@ Verdicts: MATCHES means the spec follows the clause. DEVIATES means the spec dif
 | 14 | ADR 0014 s2.5: "SHA-256 of the raw 32-byte Ed25519 public key" | 4.1 | MATCHES | Same fingerprint definition. |
 | 15 | ADR 0014 s3: "the signer fingerprint and signature bytes are not" included in the ArtifactId | 4.1, 5.1 | DEVIATES | Stated as D2. Class, algorithm and fingerprint are inside the signed range so a TEST label cannot be swapped. The signature block is 64 raw bytes with no in-file algorithm or fingerprint block. |
 | 16 | ADR 0014 s6: "The ordinary production trust-anchor set is empty and fails closed." | 8.2 step 13, 11 | MATCHES | Both anchor sets are empty until provisioned. |
-| 17 | ADR 0014 s6: "may add one known qualification public key" | 8.1, 14 | DEVIATES | The spec has two anchor classes (TEST and OWNER), and the vectors use throwaway keys from `keys/` that are not the RFC 8032 TEST 1 key that the native `seed0b-test-anchor` build trusts. A native qualification build would refuse every vector as an untrusted signer. Not fixable without changing signed bytes: open conflict C2. |
+| 17 | ADR 0014 s6: "may add one known qualification public key" | 8.1, 14 | DEVIATES | The spec has two anchor classes (TEST and OWNER), and the vectors use throwaway keys from `keys/` that are not the RFC 8032 TEST 1 key that the native `seed0b-test-anchor` build trusts. A native qualification build would refuse every vector as an untrusted signer. Not fixable without changing signed bytes: open conflict C2. Resolved in practice by aienos#277 (Option A) with an ADR 0014 amendment note; final when aienos#277 merges. |
 | 18 | ADR 0014 s6: "No owner root or production receipt key is created in Phase 2" | D4, 8.2 step 13 | MATCHES | An OWNER unit is refused `UNTRUSTED_SIGNER` until an OWNER anchor is provisioned. |
 | 19 | ADR 0017 s2.8: "The offline TRUST-1 Owner Root issues an authorized credential" | D4, 13 item 5 | DOCS SILENT | ADR 0017 says nothing on the Owner Root signing a unit container or delegating a unit-signing key (its Owner Root uses are the TPM policy key and `MigrationManifest`). Direct OWNER anchors are a placeholder; delegation stays open. |
 | 20 | ADR 0014 s1: "must never be confused with a production owner or machine identity" | 4.1, 8.2 step 12, 11 | MATCHES | The signer class is signed, and a release build refuses TEST. |
@@ -428,19 +429,26 @@ Verdicts: MATCHES means the spec follows the clause. DEVIATES means the spec dif
 | 56 | ADR 0014 s7.1: "generation u64 then context ID u64; both zero when absent" | 6.3 | DOCS SILENT | Not stated whether this u64 (the ADR 0012 system Generation) is the same counter as `required_generation`. |
 | 57 | GATES.md: "the sealed C Store on the NVMe boot disk" | 1, 8.2 | MATCHES | The spec is source-neutral. The loader copies the bytes to staging whatever supplied them. |
 | 58 | ADR 0014 s8: "Physical qualification uses the one-time boot discipline" | 1, 12, 13 item 3 | DEVIATES | The spec describes admit once, then launch several entries. The native loader admits, runs one canary and destroys the task in the same boot pass (`process_candidate`); no unit stays resident. The spec claims no implementation; hosting is open item 3. |
-| 59 | ADR 0014 s7.1 `execution_status`: "`0` not run; `1` exited; `2` timeout; `3` fault; `4` bad syscall; `5` resource overrun; `6` canary failed" | 9.3 | DEVIATES | Stated as D8. The spec has four result classes. Intended mapping for a future receipt: REFUSED to 0, RETURNED and TRAPPED to 1, `TICK_OVERRUN` to 2, `FAULT` to 3 (an `SVC` is reported as `FAULT` here but is 4 in the receipt, so the platform must supply that cause). |
+| 59 | ADR 0014 s7.1 `execution_status`: "`0` not run; `1` exited; `2` timeout; `3` fault; `4` bad syscall; `5` resource overrun; `6` canary failed" | 9.3 | DEVIATES | Stated as D8. The spec has four result classes. Intended mapping for a future receipt: REFUSED to 0, RETURNED and TRAPPED to 1, `TICK_OVERRUN` to 2, `FAULT` to 3 (an `SVC` is reported as `FAULT` here but is 4 in the receipt, so the platform must supply that cause). Code 6 (canary failed) has no OSCUNIT mapping because no canary is defined (row 70). |
 | 60 | ADR 0014 s7.1 `exit_status`: "signed 32-bit little-endian task exit code" | 9.3 | DEVIATES | Stated as D8. `RETURNED` carries a u64 and a receipt keeps the low 32 bits; the amendment must say so. |
 | 61 | ADR 0014 s7.1: "Canary passed (bit 3) requires" exited with exit status 0 | 9.3 | DEVIATES | Stated as D8. `RETURNED` accepts any value and no canary is defined. |
 | 62 | ADR 0013, 0014 and 0017: an outcome where execution began and no result was seen | 9.3 `OUTCOME_UNKNOWN` | DOCS SILENT | No AIENOS ADR defines it. Every ADR 0014 status names a known cause. The no-retry rule comes from the OSH Platform ABI, not from AIENOS. |
+| 63 | ADR 0014 s4: "Maximum complete artifact length: 16 MiB. Maximum combined file payload: 8 MiB. Maximum section count: 2. Maximum capability count: 16." | 4.2, 7 | DEVIATES | Container length (2 MiB) and capability count (16) are inside the ADR limits. The section count is not: an OSCUNIT container has 4 sections (IR, CODE, ENTRY, CAPS), and a native parser that enforces "section count 2" refuses every unit. Fixing it changes signed bytes (header, section table, every vector), so it is open conflict C3. |
+| 64 | ADR 0014 s5: "remove code write permission; map code EL0 RX, data EL0 RW+NX, and stack EL0 RW+NX ... No writable alias to executable physical pages is allowed." | 8.2 (opening paragraph), 9.1.1 | MATCHES | The spec requires RX code pages that are never writable and executable together, and a second hash of the private code pages before they become executable. A unit has no data section (section 12), so only the code and stack rules apply; the stack rule belongs to the launcher. |
+| 65 | ADR 0014 s5: "The source/staging buffer remains NX and is not mapped into the task." | 8.2 (opening paragraph) | DOCS SILENT | The spec says the loader copies into "protected staging memory" but does not say that the staging buffer is NX and unmapped from the task. ADR 0014 s5 already requires it of any loader, so a native loader inherits it; the spec could repeat it. No byte change. |
+| 66 | ADR 0014 s2.5: "The matching private test-vector seed is restricted to debug host qualification tooling and is not compiled into the kernel or ordinary release tooling." | 14, `keys/`, `tools/make-vectors.sh` | DEVIATES | Stated in the spec and in `vectors/README.md`: both keys are THROWAWAY, derived from fixed public labels in `make-vectors.sh`, so anyone can reproduce the private seeds and sign as TEST. That script is host shell tooling and no kernel or release image contains a seed (a native image holds only the public key). The seeds are not secret, so TEST-signed units prove nothing outside a qualification build, which is why a release build refuses class TEST (row 23). |
+| 67 | ADR 0014 s6: "Do not implement elliptic-curve cryptography locally." | 5.1, 8.2 step 14 | MATCHES | The spec names the operation (RFC 8032 pure Ed25519 over the domain-separated digest) and takes no stance on the implementation; its reference checker calls OpenSSL 3, and the `S < L` test is a scalar comparison, not curve arithmetic. Finding for AIENOS, not a spec conflict: the native C admission (`format.c`) already verifies with the in-house `native/sig` Ed25519, while ADR 0014 s2.5 describes the `ed25519-dalek` verifier. The OSC unit loader uses the same in-house verifier as `format.c`. |
+| 68 | ADR 0014 s7.2: "receipt_signature = Ed25519.Sign(receipt_private_key, "AIENOS-ADMISSION-RECEIPT-SIGNATURE-V1\0" \|\| ReceiptDigest)" | 5.2, D8 | DEVIATES | Stated as D8. No receipt is defined for a unit. Receipt signing (a distinct test receipt key, never in a kernel image or release tooling) stays with AIENOS; a future amendment binds `UnitDigest`. The container signature and the receipt signature use different domain tags and keys and must not be confused. |
+| 69 | ADR 0017 s2.8: "Slot 0 unsealing uses TPM 2.0 `PolicyAuthorize` to allow firmware and kernel measurements to evolve without invalidating the sealed key" | 11, 12 | MATCHES | The spec has no TPM step: admission reads and changes no TPM state, and ADR 0014 scope also forbids TPM mutation. A stored container is protected under ADR 0017 `K_artifact` (row 31), and the `PolicyAuthorize` unseal flow sits below the container. |
+| 70 | ADR 0014 s7.1: field table `execution_status` lists "`6` canary failed"; the mapping text after the table lists only "not run `0`, exited `1`, timeout `2`, fault `3`, bad syscall `4`, resource overrun `5`" | 9.3, 13 item 10 | DOCS SILENT | This is a gap inside ADR 0014 (the table has code 6, the mapping text omits it), not a spec bug. The spec defines no canary (section 13 item 10), so no OSCUNIT result maps to 6; the mapping in row 59 therefore stops at 5 and a future receipt amendment must say how a canary failure reaches 6. |
 
 ### 15.2 Counts
 
 Counts are computed from the table in 15.1 and are repeated in the pull request.
 
-62 rows: 37 MATCHES, 21 DEVIATES, 4 DOCS SILENT.
+70 rows: 40 MATCHES, 24 DEVIATES, 6 DOCS SILENT.
 
-Of the 21 DEVIATES, 12 have a stated reason and need no change (rows 1, 9, 10, 15, 21, 29, 43, 50, 58, 59, 60, 61). Seven were real conflicts or gaps and were fixed by text without touching bytes, signed ranges, vectors or refusal numbers (rows 4, 5, 23, 33, 36, 38, 48). Two are open conflicts (rows 17 and 55, see 15.3).
-
+Of the 24 DEVIATES, 14 have a stated reason and need no change (rows 1, 9, 10, 15, 21, 29, 43, 50, 58, 59, 60, 61, 66, 68). Seven were real conflicts or gaps and were fixed by text without touching bytes, signed ranges, vectors or refusal numbers (rows 4, 5, 23, 33, 36, 38, 48). Three are open conflicts (rows 17, 55 and 63, see 15.3).
 
 ### 15.3 Open conflicts needing a decision
 
@@ -450,12 +458,22 @@ No fix below was made, because each would change signed bytes, vector expectatio
 - Option A: keep the field and domains. AIENOS amends ADR 0013 or 0014 to define a per-resource generation counter that the loader supplies. No byte change here. Upside: v1 stays as vetted. Downside: AIENOS must write that amendment before any loader can honor codes 28 and 29.
 - Option B: remove `required_generation` and `domain` in a v2 draft, so each request is exactly the 48-byte ADR 0014 record. This changes the capability record size, the section hash, every vector with a CAPS section, and retires refusal codes 27 to 29 (vectors a02, a03, r18, r20, r36 and `state.txt`). Upside: no concept the ADRs lack. Downside: a new `container_version` and regenerated vectors.
 
+Status of C1: still open. aienos#277 refuses any pinned generation (CAP_GENERATION_STALE) until capability authority defines it.
+
 **C2. Which test keys a native qualification build trusts (row 17).** ADR 0014 allows one known test key; the vectors use two throwaway keys that the native build does not trust.
 - Option A: AIENOS amends ADR 0014 so a `seed0b-test-anchor` build may hold a list that includes the spec's `keys/test1.pub` and `keys/owner1.pub`. No byte change here. Downside: the ADR rule of "one known key" is loosened for a test build only.
 - Option B: re-sign the TEST vectors with the RFC 8032 TEST 1 key that the native build already trusts. The signer fingerprint is inside `UnitDigest`, so every signed vector and every `unit_digest` in `expected.txt` changes; the OWNER vectors still need a second key. Downside: regenerated vectors and a changed key story.
+
+Status of C2: resolved in practice by aienos#277 (Option A) with an ADR 0014 amendment note; final when aienos#277 merges.
+
+**C3. Section count and size limits of ADR 0014 section 4 (row 63).** ADR 0014 allows at most 2 sections ("Maximum section count: 2"), 16 MiB per artifact, 8 MiB of payload and 16 capabilities. An OSCUNIT container has 4 sections, so a loader that enforces the ADR limit for this container refuses every unit. Length (2 MiB) and capability count (16) already fit.
+- Option A: AIENOS raises the limit for OSCUNIT only. The OSCUNIT admission path enforces its own limits (section 7: 4 sections, 2 MiB, 16 capabilities) and ADR 0014 section 4 is amended to say the 2-section limit applies to Binary Artifact v0 only. No byte change here. Upside: v1 stays as vetted. Downside: ADR 0014 gains a second format with its own limits. aienos#277 already does this in practice, because its OSCUNIT path is separate from the Binary Artifact v0 parser.
+- Option B: change the container in a v2 draft to 2 sections (for example merge IR and CODE, or merge ENTRY and CAPS into one). This changes the section table, every section hash and every vector. Downside: a new `container_version`, regenerated vectors, and a less clean layout.
+
+Status of C3: open. No byte or vector change is made for it in v1.
 
 ### 15.4 What this reconciliation does and does not show
 
 - It compares text and code at one aienos commit. It does not run anything on AIENOS.
 - The native loader today admits Binary Artifact v0 only. It has no code for `OSCUNIT\0`. Passing vectors are not evidence of the native loader: the vectors were produced by the shell generator and judged by the shell checker and a small C reference, and no kernel or adapter loader has run them.
-- ADR 0013, 0014 and 0017 are all Status Proposed, so a match here is a match with proposals. The status line stays "v1 DRAFT (frozen pending ADR reconciliation)" because C1 and C2 are undecided.
+- ADR 0013, 0014 and 0017 are all Status Proposed, so a match here is a match with proposals. The status line stays "v1 DRAFT (frozen pending ADR reconciliation)" because C1 and C3 are undecided and C2 is final only when aienos#277 merges.
