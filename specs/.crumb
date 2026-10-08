@@ -57,16 +57,22 @@
           "last_commit": "6df80a6",
           "name": "inference",
           "purpose": "Directory specs/inference. Purpose not yet described by a human."
+        },
+        {
+          "digest": "f958156ae61b8c63c386884e6d8b6c6a4b1d2492bb4e5a3ac1e4d28abd2d1c5d",
+          "last_commit": "",
+          "name": "osh-platform",
+          "purpose": "OSH platform ABI draft (osh-platform)"
         }
       ],
-      "children_root": "sha256:789e6d6ae8dd0b7bbd76eefd7c8eb40c8db9a41c9c6b5bf8dc2ed0e8267151b9",
-      "compiled_at": "2026-10-04T18:15:53Z",
+      "children_root": "sha256:44c5759efa4928d36ebabb2f61afce0b51afb45170c2cc1753c2ac36b9ead553",
+      "compiled_at": "2026-10-08T00:29:27Z",
       "compiler": "crumb-compile/1",
-      "digest": "sha256:e1ef3d46a7fe46df35a9cb53ee12cd1655e483aa360d8e7e18d862067d2aaf4a",
+      "digest": "sha256:e37503af65ccaa5abb13b18fdc98872046026e80855dbc6588254336fc5df7ad",
       "evidence_files": 0,
       "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "files": 315,
-      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
+      "generated_at_commit": "3a4cdbe8d360a2e1ddb3e8b108684048b9d4ba10",
       "source_tree": "sha256:ef09027d5d1f8577b214f4b1c0468f821867a4adcaea05fe5bcc03fb8a9f7c71"
     },
     "owner_lane": "",

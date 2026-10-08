@@ -1,0 +1,19 @@
+{
+  "extensions": {
+    "generated": {
+      "children": [],
+      "children_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compiled_at": "2026-10-08T00:29:27Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:3cd0c13e156f2f8d96ea7b4afda475521e8df1bb39db2dcbcf5433155e36bf2f",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 0,
+      "generated_at_commit": "3a4cdbe8d360a2e1ddb3e8b108684048b9d4ba10",
+      "source_tree": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "name": "vectors",
+  "purpose": "OSH platform ABI draft (vectors)",
+  "schema_version": "1.0.0"
+}

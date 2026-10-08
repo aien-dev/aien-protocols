@@ -11,7 +11,7 @@ Research-grade and pre-alpha. The specifications and reference Rust crates (AGPL
 ```text
 specs/       Normative specifications (Community Specification License 1.0):
              agent-state, inference, evaluation, crumb-visible, execution-transcript,
-             evidence-receipt (partial), verified-crumb
+             evidence-receipt (partial), verified-crumb, osh-platform (draft)
 crates/      Reference Rust crates (AGPL-3.0-or-later), legacy:
              aien-protocol-types, aien-agent-state-abi, aien-inference-protocol,
              aien-inference-client, aien-action-protocol, aien-event-protocol,

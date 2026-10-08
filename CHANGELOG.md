@@ -9,6 +9,10 @@ VERSIONING.md.
 
 ### Specifications
 
+- `specs/osh-platform`: OSH Platform ABI v1 DRAFT (not frozen) for the
+  Omega-native shell of aien-architecture#158: step and status protocol,
+  request record, platform operations, authority and interrupted-effect
+  rules, and 15 conformance vectors. Spec only; no implementation exists.
 - `specs/crumb-visible`: Crumb Reader Contract 1.0.0 for the CRB1 visible
   record (wire schema 1), numbered refusal codes, check order, determinism
   rule, and a shared conformance corpus (122 family vectors, 5 edge
