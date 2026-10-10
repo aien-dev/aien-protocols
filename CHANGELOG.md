@@ -9,6 +9,8 @@ VERSIONING.md.
 
 ### Specifications
 
+- `specs/evaluation`: verdict identity domain registry added; `AIEN_E2E_OBJECTIVE_V1` and `AIEN_E2E_VERDICT_V1` registered (FROZEN 2026-10-10 with aien-architecture `ACCEPTANCE_E2E.md`; harness and verifier in aien-sovereign-core produce them).
+
 - `specs/osc-unit-artifact`: OSC Unit Artifact v1 DRAFT, frozen pending ADR reconciliation (2026-10-08), the signed
   container in which an OSC-compiled Omega unit (A64 code plus canonical IR) is
   admitted and launched by AIENOS or the host adapter. Named refusal codes,
