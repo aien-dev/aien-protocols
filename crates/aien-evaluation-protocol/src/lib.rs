@@ -587,8 +587,31 @@ pub struct SignedEvaluationReceipt {
     pub key_fingerprint: String,
 }
 
+/// Fingerprint of a P-256 verifying key: hex SHA-256 of the compressed SEC1 point.
+/// Same derivation the signers use (SoftwareP256Signer::new, lib.rs:270).
+pub fn verifying_key_fingerprint(verifying_key: &VerifyingKey) -> String {
+    hex::encode(Sha256::digest(verifying_key.to_sec1_point(true).as_bytes()))
+}
+
 impl SignedEvaluationReceipt {
+    /// Checks the signature, that the stored `key_fingerprint` is the fingerprint of
+    /// `verifying_key`, and that `receipt.verifier.key_id` equals it. It cannot check the
+    /// signing tier because the tier is not derivable from a key.
+    #[deprecated(note = "use `verify_with`, which also pins the expected cryptographic tier")]
     pub fn verify(&self, verifying_key: &VerifyingKey) -> Result<bool, EvaluationError> {
+        let fingerprint = verifying_key_fingerprint(verifying_key);
+        if self.key_fingerprint != fingerprint {
+            return Err(EvaluationError::KeyIdentityMismatch {
+                expected: self.key_fingerprint.clone(),
+                actual: fingerprint,
+            });
+        }
+        if self.receipt.verifier.key_id != fingerprint {
+            return Err(EvaluationError::KeyIdentityMismatch {
+                expected: self.receipt.verifier.key_id.clone(),
+                actual: fingerprint,
+            });
+        }
         let sig = Signature::from_slice(&self.signature).map_err(|e| {
             EvaluationError::VerificationFailed(format!("Invalid signature format: {e}"))
         })?;
@@ -597,6 +620,22 @@ impl SignedEvaluationReceipt {
             .verify(&digest.0, &sig)
             .map(|_| true)
             .map_err(|e| EvaluationError::VerificationFailed(format!("Signature mismatch: {e}")))
+    }
+
+    /// Strict verification against an operator-supplied key and expected tier (AEI1 2.2 steps 1 to 3).
+    pub fn verify_with(
+        &self,
+        verifying_key: &VerifyingKey,
+        expected_tier: CryptographicTier,
+    ) -> Result<bool, EvaluationError> {
+        if self.cryptographic_tier != expected_tier {
+            return Err(EvaluationError::TierMismatch {
+                expected: expected_tier,
+                actual: self.cryptographic_tier,
+            });
+        }
+        #[allow(deprecated)]
+        self.verify(verifying_key)
     }
 }
 
@@ -632,6 +671,11 @@ pub enum EvaluationError {
         "Verifier key identity mismatch: receipt key_id {expected} vs signer fingerprint {actual}"
     )]
     KeyIdentityMismatch { expected: String, actual: String },
+    #[error("Cryptographic tier mismatch: expected {expected:?}, receipt claims {actual:?}")]
+    TierMismatch {
+        expected: CryptographicTier,
+        actual: CryptographicTier,
+    },
     #[error("Rollback execution failed: {0}")]
     RollbackFailed(String),
     #[error("Verifier verification error: {0}")]
