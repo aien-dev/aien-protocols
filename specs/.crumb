@@ -42,9 +42,15 @@
         },
         {
           "digest": "e5918d28b994ca4b36ede8821872cfc0cbde085050ab66ae5347e23ed725b643",
-          "last_commit": "64a1e57",
+          "last_commit": "407487b",
           "name": "evaluation",
           "purpose": "Directory specs/evaluation. Purpose not yet described by a human."
+        },
+        {
+          "digest": "00688b9f539c9a4b5f2000cb84cc7d33c3200a7474eb9d7c43aab385575c738e",
+          "last_commit": "f1afb8e",
+          "name": "evidence",
+          "purpose": "Adaptive evidence interface requirements (AEI1): the one signed evidence receipt, TRN1 productio"
         },
         {
           "digest": "a1c4e4655425fe30bdbaecad47180001a2aeb5c4bb9a768a4bfaea07e6e864c2",
@@ -59,15 +65,15 @@
           "purpose": "Directory specs/inference. Purpose not yet described by a human."
         }
       ],
-      "children_root": "sha256:cd5c02c3f502bf2a05d90433e88d153a18e039db4f6ba33dd739f87418fea490",
-      "compiled_at": "2026-10-10T14:29:02Z",
+      "children_root": "sha256:8c218c2c81df10b708cecd8253dd60392be2370c79c3efcee4af5d28af65adae",
+      "compiled_at": "2026-10-11T14:34:46Z",
       "compiler": "crumb-compile/1",
-      "digest": "sha256:a1a2e0fa8a4e51a2238b5e7030ece618bff97b21a7da80e44098d2f955815f9f",
-      "evidence_files": 0,
-      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "files": 387,
-      "generated_at_commit": "64a1e577252259190f09c667ee23d00a7f103ad6",
-      "source_tree": "sha256:3ab6209826e2c1872c4405c35c315e318e122f546a2237408db2a854fe898745"
+      "digest": "sha256:ace0f0e768162b224ce0bbf37dc5bf5a460eeae88820d52d64f3013b9c57365b",
+      "evidence_files": 1,
+      "evidence_root": "sha256:87c36bf8ed7be61c064552ebf141834707770b75d070ea49328a3e06d510afba",
+      "files": 388,
+      "generated_at_commit": "f1afb8e532ec3524dfa168185e2bcd0136797dad",
+      "source_tree": "sha256:10c07ef03803db100c7cca2f61decf128d23f442e5b765afe2126e3d39727e42"
     },
     "owner_lane": "",
     "seed": {
