@@ -1,4 +1,4 @@
-# tests/gates/crumb-verify.gate
+# tests/gates/crumb.gate
 # Mirrors: crumb verify . (ADR 0033 D11; always-run). Inputs cannot list every nested
 # .crumb (manifests take literal paths, not globs), so results are never cached.
 gate: CRUMB-VERIFY
