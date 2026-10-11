@@ -47,8 +47,8 @@
           "purpose": "Directory specs/evaluation. Purpose not yet described by a human."
         },
         {
-          "digest": "2ba2eb3c4aaa1d617e317317ebb3421760352aefdfbb06c85aba77023a1ee935",
-          "last_commit": "b087f40",
+          "digest": "00688b9f539c9a4b5f2000cb84cc7d33c3200a7474eb9d7c43aab385575c738e",
+          "last_commit": "f1afb8e",
           "name": "evidence",
           "purpose": "Adaptive evidence interface requirements (AEI1): the one signed evidence receipt, TRN1 productio"
         },
@@ -65,15 +65,15 @@
           "purpose": "Directory specs/inference. Purpose not yet described by a human."
         }
       ],
-      "children_root": "sha256:ed534b8ac820fa66601634b3f8e101cc2720ca66a304c48aa0b7e5d82e5ddaf3",
-      "compiled_at": "2026-10-11T14:33:22Z",
+      "children_root": "sha256:8c218c2c81df10b708cecd8253dd60392be2370c79c3efcee4af5d28af65adae",
+      "compiled_at": "2026-10-11T14:34:46Z",
       "compiler": "crumb-compile/1",
-      "digest": "sha256:da5213bb27b43e8b7be8dfe6123776bc24d7a03b7b5a72af7b317c2443d0ff3d",
+      "digest": "sha256:ace0f0e768162b224ce0bbf37dc5bf5a460eeae88820d52d64f3013b9c57365b",
       "evidence_files": 1,
-      "evidence_root": "sha256:0182df69b265bab99842352f651c865d99d60184175f8b5e396e0cb86e78227b",
+      "evidence_root": "sha256:87c36bf8ed7be61c064552ebf141834707770b75d070ea49328a3e06d510afba",
       "files": 388,
-      "generated_at_commit": "b087f40ab9d7091acdd8fd1ecbd774ec86254874",
-      "source_tree": "sha256:2e3d1420d31b387ad2d69494be04ca191c014ad22bfff9aca1c1878b987fa28b"
+      "generated_at_commit": "f1afb8e532ec3524dfa168185e2bcd0136797dad",
+      "source_tree": "sha256:10c07ef03803db100c7cca2f61decf128d23f442e5b765afe2126e3d39727e42"
     },
     "owner_lane": "",
     "seed": {
