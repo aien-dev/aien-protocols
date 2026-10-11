@@ -1,0 +1,21 @@
+# tests/gates/proto-clippy.gate
+# Mirrors hosted step: ci.yml 'Cargo Clippy Invariant': cargo clippy --workspace --all-targets -- -D warnings
+gate: PROTO-CLIPPY
+manifest_version: 2
+owner: aien-protocols
+requires:
+  - host
+inputs:
+  - Cargo.toml
+  - Cargo.lock
+  - crates/
+  - tests/gates/
+run:
+  exec: tests/gates/run.sh
+  args: ["clippy"]
+expects:
+  exit: 0
+  verdict: PASS
+timeout: 20m
+exactness: EXACT
+cache_scope: machine

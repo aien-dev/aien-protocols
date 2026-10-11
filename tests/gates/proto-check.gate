@@ -1,0 +1,21 @@
+# tests/gates/proto-check.gate
+# Mirrors hosted step: ci.yml 'Cargo Workspace Check': cargo check --workspace --all-targets
+gate: PROTO-CHECK
+manifest_version: 2
+owner: aien-protocols
+requires:
+  - host
+inputs:
+  - Cargo.toml
+  - Cargo.lock
+  - crates/
+  - tests/gates/
+run:
+  exec: tests/gates/run.sh
+  args: ["check"]
+expects:
+  exit: 0
+  verdict: PASS
+timeout: 20m
+exactness: EXACT
+cache_scope: machine
