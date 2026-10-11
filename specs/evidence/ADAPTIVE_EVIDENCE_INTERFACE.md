@@ -39,13 +39,15 @@ Fields ADDED (not present today; grep of the crate finds no world, generation or
 
 | New field | Type | Source in existing code | Notes |
 |---|---|---|---|
-| `world_id` | `Digest32` | none found in omega or protocols | **OPEN Q1**: no world identity type exists (omega `RxWorld` has no stable id field that I verified). Until defined, receipts cannot claim a world. |
-| `generation` | `u64` | `CxHeader.generation` (omega `src/runtime/rx_cortex.h:121`, header struct :154-160) and `RxLivingProvenance.epoch` (`rx_living.h:90`) | The generation the candidate was promoted or evaluated under. OPEN Q3: which of the two counters. |
+| `world_id` | `Digest32` | omega `src/runtime/aien_machine_id.h:1-10`: the one canonical AIEN machine identity, SHA-256("AIENOS-MACHINE-ID-V1\0" || provisioned MachineId bytes); same slot as aienos receipts (ADR 0014 offset 352) | **DECIDED Q1** (orchestrator, 2026-10-11): `world_id` is the 32-byte machine identity. Zero = absent = refuse. |
+| `cortex_session` | `u64` | the Cortex session in the `CX_WREC` payload (omega `rx_cortex_record.h:14`, attach `:42`) | **DECIDED Q1**: names the World session within that machine. |
+| `generation` | `u64` | R9 active generation id: `rx_gen_active(store,&id,&lineage)` (omega `rx_generation.h:169`); the value the Cortex recorder stamps into `CxHeader.generation` (`rx_cortex.h:121`), protected as `CX_PROT_GENERATION_ID` (`rx_cortex.h:78`) | **DECIDED Q3**: this and only this. |
+| `epoch` | `u64`, optional | `RxLivingProvenance.epoch`, the Omega search epoch (`rx_living.h:90`) | **DECIDED Q3**: a different axis, carried separately, never as `generation`. |
 | `execution_id` | `[u8;32]` | TRN1 header `run_id`, bytes 8-40 (TRN1_TRANSCRIPT_SPEC.md:59, "opaque; the root causal id") | Equals the transcript's `run_id`. Joins receipt to transcript. |
 | `transcript_digest` | `Digest32` | TRN1 **final digest**: record digest of the `END` record (TRN1_TRANSCRIPT_SPEC.md:89-91) | "publishing it in a receipt pins the whole file". |
 | `cortex_chain_head` | `Digest32` | `CxStore.chain[32]`, "running hash over every digest in append order" (omega `rx_cortex.h:143`) | Head at the moment the receipt is issued, after the last evidence record. |
-| `producer_subsystem` | `u16` | TRN1 header `producer` (TRN1_TRANSCRIPT_SPEC.md:60, offset 40, "subsystem id, not 0") | Names the runtime that wrote the transcript. Distinct from `verifier`. |
-| `proposer` | `String` | `EvaluationRequest.proposer` (lib.rs:20) | Copied into the receipt so self-approval (section 6, N8) is checkable from the receipt alone. |
+| `producer_subsystem` | `String` | name of the producing subsystem; the TRN1 header `producer` u16 (TRN1_TRANSCRIPT_SPEC.md:60) must map to it | Names the runtime that wrote the transcript. Compared in the self-approval rule (N-self). Distinct from `verifier`. |
+| `proposer` | `String` | `EvaluationRequest.proposer` (lib.rs:20) | Copied into the receipt so self-approval (section 6, N-self) is checkable from the receipt alone. |
 | `evidence_class` | enum `{Production, Fixture}` | section 5; mirrors `ObservationProvenance {Measured, Synthetic}` (spark-rsi `src/canary_observation.rs:11-15`) | Type-level, in the digest. |
 
 `candidate digest` is `subject_digest` and nothing else; no second candidate field.
@@ -60,7 +62,7 @@ A consumer MUST, in this order, and refuse with a distinct code at the first fai
 5. Check `execution_id` and `transcript_digest` against a TRN1 transcript that passes the reference verifier (`tools/trn1_verify.c`): header `run_id` equal, `END` record digest equal.
 6. Check `cortex_chain_head` is reachable in the Cortex journal being relied upon (OPEN Q4: how a consumer proves reachability; omega has `cx_verify` per INVENTORY row 4 but I did not read its contract here).
 7. Check `evidence_class == Production` unless the consumer is a fixture runner (section 5).
-8. Check `proposer != verifier.principal_id` and the self-approval rule (section 6, N8).
+8. Check `proposer != verifier.principal_id` and the self-approval rule (section 6, N-self).
 
 ## 3. TRN1 transcript production requirement
 
@@ -123,7 +125,7 @@ Each row: a bad artifact goes in; a named refusal comes out; no `Pass`. "Existin
 | N5 | Replayed observation (same id, different record; same `execution_id`, other candidate; receipt reused for another candidate) | conflict / replay | spark-rsi `admit_production_quota` id-conflict branch; interplane `a_genuine_receipt_for_other_bytes_is_a_substituted_change` :301 |
 | N6 | Unsigned (receipt, observation, or transcript digest not in a signed receipt) | unsigned / untrusted source | interplane `wrong_keys_are_refused` :276 (receipt only; observation case has no test) |
 | N7 | Mismatched candidate (`subject_digest` or observation `candidate_digest` differs from admitted bytes) | subject mismatch | spark-rsi `admit_production_quota` digest check; interplane `evaluation_subject_mismatch` code (evaluation.rs `check`) |
-| N8 | Self-approval: `proposer == verifier.principal_id`, or the verifier key is held by the proposing subsystem, or the candidate modified the evaluator, thresholds or verifier keys | refuse, never `Pass` | none. Rule from specs/evaluation/SPEC.md:14 (Immutability Invariant). Test is OPEN Q11 |
+| N-self | Self-approval (**DECIDED Q11**: "same subsystem" = same signing-key fingerprint OR same `producer_subsystem` string). Refuse a promotion when (a) promotion authority key fingerprint == receipt producer's `key_fingerprint`, (b) it == the proposer's key fingerprint, or (c) `producer_subsystem` == promoter subsystem string. One test per equality. Also refuse if the candidate modified the evaluator, thresholds or verifier keys | refuse, never `Pass` | none. Rule from specs/evaluation/SPEC.md:14. Depends on blocking precondition aien-protocols#20 (verify ignores tier and fingerprint, lib.rs:591-601) |
 | N9 | Fixture presented as production (`evidence_class` flipped, fixture-signed observation, fixture file in production loader) | class / untrusted source | none |
 | N10 | Wrong tier or fingerprint (receipt claims Tier4 but was signed with a software key) | tier mismatch | none; `verify` ignores both today (lib.rs:591-601) |
 | N11 | Transcript valid but receipt `execution_id` / `transcript_digest` differs | join mismatch | none |
@@ -150,9 +152,9 @@ Stale or unpinned consumers found by the Milestone 0 inventory (aien-protocols h
 
 ## 8. OPEN questions (not decisions)
 
-1. **World identity.** No type exists. What is a "world" id: a digest of the omega `RxWorld` config, a name, or a Cortex subject id? Receipt `world_id` cannot freeze until answered.
+1. **DECIDED (world identity).** `world_id` = machine identity digest from `aien_machine_id.h`; plus `cortex_session` u64. See section 2.1.
 2. **Adapters.** Is `rsi-eval/2` (interplane) re-signed into AEI1 by a new adapter, or does spark-rsi switch to `EvaluationReceipt`? Same for the prime-race receipt. (Rule A1 forbids a fourth format either way.)
-3. **Generation.** `CxHeader.generation` (rx_cortex.h:121) or `RxLivingProvenance.epoch` (rx_living.h:90)? They may not be the same counter.
+3. **DECIDED (generation).** R9 active generation id; search epoch is a separate optional `epoch`. See section 2.1.
 4. **Cortex chain reachability.** What check proves `cortex_chain_head` belongs to a journal a consumer can open? `cx_verify` (rx_cortex.h:230) verifies one object by id, not a chain head.
 5. **Transcript writer separation.** How does omega or sovereign-core keep the TRN1 writer outside the candidate's authority? No existing mechanism cited.
 6. **Time units.** ms (`observed_at_ms`) versus micros (`Timestamp`).
@@ -160,8 +162,8 @@ Stale or unpinned consumers found by the Milestone 0 inventory (aien-protocols h
 8. **Resource cost metrics** required beyond `latency_us`.
 9. **Replay window** between observation time and receipt times.
 10. **Synthetic marker enforcement**: how to guarantee a production key can never sign `Synthetic`.
-11. **Self-approval test**: what exactly identifies "the same subsystem" (principal string, key, or build digest)? `trusted_build_digest` (lib.rs:226) is the only candidate identifier found.
+11. **DECIDED (self-approval).** Same key fingerprint or same `producer_subsystem` string; matrix row N-self.
 12. **Approval binding.** interplane's AIEN adapter uses a shared-secret HMAC (`compose_ledger.rs:94,132,190`), not public-key signatures. Does AEI1 replace it for adaptive evidence?
 13. **Tier floor.** Which `CryptographicTier` (lib.rs:231-240) is the minimum for production: Tier2 software or Tier4 TPM only?
 
-Questions that block freeze: 1, 3, 11. Questions that block only M5/M6: 6 to 10.
+Freeze preconditions: aien-protocols#20 (`verify` ignores tier and fingerprint, lib.rs:591-601) must be fixed. All three former freeze blockers (1, 3, 11) are decided; 10 questions remain OPEN (2, 4 to 10, 12, 13). Questions 6 to 10 block only M5/M6.
