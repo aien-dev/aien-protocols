@@ -7,6 +7,9 @@ use std::collections::{HashMap, HashSet};
 use std::future::Future;
 use std::sync::Arc;
 
+mod adaptive;
+pub use adaptive::*;
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct EvaluationClaim {
     pub claim_type: String,
