@@ -147,7 +147,9 @@ fn test_typed_signer_tier_enforcement_and_signature_verification() {
     assert_eq!(signed.key_fingerprint, fingerprint);
 
     let verifying_key = signer.verifying_key();
-    assert!(signed.verify(&verifying_key).expect("verification failed"));
+    assert!(signed
+        .verify_with(&verifying_key, CryptographicTier::Tier2SoftwareKey)
+        .expect("verification failed"));
 
     // TPM signer strictly reports Tier 4 and performs real hardware TPM signing when device is present
     if std::path::Path::new("/dev/tpmrm0").exists() {
@@ -167,7 +169,7 @@ fn test_typed_signer_tier_enforcement_and_signature_verification() {
             );
             let tpm_vk = tpm_signer.verifying_key();
             assert!(tpm_signed
-                .verify(&tpm_vk)
+                .verify_with(&tpm_vk, CryptographicTier::Tier4HardwareTpm)
                 .expect("TPM signature verification failed"));
         }
     }
@@ -322,7 +324,9 @@ async fn test_canary_rollback_harness_invariant_violation_triggers_rollback() {
     assert_eq!(outcomes.len(), 1);
 
     let verifying_key = signer.verifying_key();
-    assert!(receipt.verify(&verifying_key).unwrap());
+    assert!(receipt
+        .verify_with(&verifying_key, CryptographicTier::Tier2SoftwareKey)
+        .unwrap());
 }
 
 #[tokio::test]
@@ -378,5 +382,7 @@ async fn test_canary_rollback_harness_success_admits_candidate() {
     assert_eq!(outcomes.len(), 1);
 
     let verifying_key = signer.verifying_key();
-    assert!(receipt.verify(&verifying_key).unwrap());
+    assert!(receipt
+        .verify_with(&verifying_key, CryptographicTier::Tier2SoftwareKey)
+        .unwrap());
 }

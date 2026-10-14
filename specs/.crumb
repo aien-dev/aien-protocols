@@ -41,10 +41,16 @@
           "purpose": "Directory specs/crumb-visible. Purpose not yet described by a human."
         },
         {
-          "digest": "cb13339a84bf45a1e728365cb5e8df19361a68553c2634ee313b23095dca0cfe",
-          "last_commit": "6df80a6",
+          "digest": "e5918d28b994ca4b36ede8821872cfc0cbde085050ab66ae5347e23ed725b643",
+          "last_commit": "407487b",
           "name": "evaluation",
           "purpose": "Directory specs/evaluation. Purpose not yet described by a human."
+        },
+        {
+          "digest": "00688b9f539c9a4b5f2000cb84cc7d33c3200a7474eb9d7c43aab385575c738e",
+          "last_commit": "2d854da",
+          "name": "evidence",
+          "purpose": "Adaptive evidence interface requirements (AEI1): the one signed evidence receipt, TRN1 productio"
         },
         {
           "digest": "a1c4e4655425fe30bdbaecad47180001a2aeb5c4bb9a768a4bfaea07e6e864c2",
@@ -59,21 +65,21 @@
           "purpose": "Directory specs/inference. Purpose not yet described by a human."
         },
         {
-          "digest": "f4e1eaf233142b830ee800d3f0976c2eb0f9f0d34e187163770f40b66464f0f2",
-          "last_commit": "718e692",
+          "digest": "9e4c62d882bc3eaf007bdc463eb9671405f0f0461b3e11aac2dbb418acda53ae",
+          "last_commit": "37a2159",
           "name": "osh-platform",
           "purpose": "OSH platform ABI draft (osh-platform)"
         }
       ],
-      "children_root": "sha256:873595d2db19c9d4d2ec37d70dc01528b98dd1682d036148795aa2c5acf51e0c",
-      "compiled_at": "2026-10-08T12:11:07Z",
+      "children_root": "sha256:6cf5b33d05298483b233481bc67ac65845482a73ed7a7e876ba7b3cef3bc3527",
+      "compiled_at": "2026-10-14T13:23:26Z",
       "compiler": "crumb-compile/1",
-      "digest": "sha256:b49c5d2f60d868fa4900be02e026eacd73d69ae3e704d772754be2fe07da7459",
-      "evidence_files": 0,
-      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "files": 410,
-      "generated_at_commit": "d3c492d8f0bac8879102a9101326712053e63842",
-      "source_tree": "sha256:a51f766a2d633081f7f9d6ea2ccfda7fcdb96abc4591aef16954f3210c1f0087"
+      "digest": "sha256:7dcc2b4dd4387e1c881350a18e174c57f8f8af8e4d6a2c609045008f5536b5b8",
+      "evidence_files": 1,
+      "evidence_root": "sha256:87c36bf8ed7be61c064552ebf141834707770b75d070ea49328a3e06d510afba",
+      "files": 416,
+      "generated_at_commit": "7d10e1adb9d04310273d6022f2744d471995db55",
+      "source_tree": "sha256:bdeace5168d590bab6484e6221c2e36cba90badd8a0abf00b02a72dd5884fe44"
     },
     "owner_lane": "",
     "seed": {

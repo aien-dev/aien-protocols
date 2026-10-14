@@ -1,0 +1,23 @@
+# tests/gates/proto-anti-slop.gate
+# Mirrors hosted step: ci.yml 'Enforce Sovereign Voice and Anti-Slop Invariant' (always-run)
+gate: PROTO-ANTI-SLOP
+manifest_version: 2
+owner: aien-protocols
+requires:
+  - portable
+inputs:
+  - crates/
+  - docs/
+  - README.md
+  - ANTI_ENCLOSURE.md
+  - tests/gates/
+run:
+  exec: tests/gates/run.sh
+  args: ["anti-slop"]
+expects:
+  exit: 0
+  observe: ["dash_hits == 0"]
+  verdict: PASS
+timeout: 2m
+exactness: EXACT
+cache_scope: portable
