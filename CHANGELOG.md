@@ -9,8 +9,12 @@ VERSIONING.md.
 
 ### Specifications
 
-- `specs/evaluation`: verdict identity domain registry added; `AIEN_E2E_OBJECTIVE_V1` and `AIEN_E2E_VERDICT_V1` registered (FROZEN 2026-10-10 with aien-architecture `ACCEPTANCE_E2E.md`; harness and verifier in aien-sovereign-core produce them).
-
+- `specs/osh-platform`: OSH Platform ABI v1 DRAFT (not frozen) for the
+  Omega-native shell of aien-architecture#158: step and status protocol,
+  request record, platform operations, authority and interrupted-effect
+  rules, and 20 conformance vectors. First implementation: omega `src/osh`
+  (omega#337, #339, #340); its deltas (refusals 246 to 250, the 239 list,
+  host cells `S_NOSKIP` and `S_EOI`, the variable-answer sentinel) are folded in.
 - `specs/osc-unit-artifact`: OSC Unit Artifact v1 DRAFT, frozen pending ADR reconciliation (2026-10-08), the signed
   container in which an OSC-compiled Omega unit (A64 code plus canonical IR) is
   admitted and launched by AIENOS or the host adapter. Named refusal codes,

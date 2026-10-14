@@ -48,7 +48,7 @@
         },
         {
           "digest": "00688b9f539c9a4b5f2000cb84cc7d33c3200a7474eb9d7c43aab385575c738e",
-          "last_commit": "f1afb8e",
+          "last_commit": "2d854da",
           "name": "evidence",
           "purpose": "Adaptive evidence interface requirements (AEI1): the one signed evidence receipt, TRN1 productio"
         },
@@ -63,17 +63,23 @@
           "last_commit": "6df80a6",
           "name": "inference",
           "purpose": "Directory specs/inference. Purpose not yet described by a human."
+        },
+        {
+          "digest": "9e4c62d882bc3eaf007bdc463eb9671405f0f0461b3e11aac2dbb418acda53ae",
+          "last_commit": "37a2159",
+          "name": "osh-platform",
+          "purpose": "OSH platform ABI draft (osh-platform)"
         }
       ],
-      "children_root": "sha256:8c218c2c81df10b708cecd8253dd60392be2370c79c3efcee4af5d28af65adae",
-      "compiled_at": "2026-10-11T14:34:46Z",
+      "children_root": "sha256:6cf5b33d05298483b233481bc67ac65845482a73ed7a7e876ba7b3cef3bc3527",
+      "compiled_at": "2026-10-14T13:23:26Z",
       "compiler": "crumb-compile/1",
-      "digest": "sha256:ace0f0e768162b224ce0bbf37dc5bf5a460eeae88820d52d64f3013b9c57365b",
+      "digest": "sha256:7dcc2b4dd4387e1c881350a18e174c57f8f8af8e4d6a2c609045008f5536b5b8",
       "evidence_files": 1,
       "evidence_root": "sha256:87c36bf8ed7be61c064552ebf141834707770b75d070ea49328a3e06d510afba",
-      "files": 388,
-      "generated_at_commit": "f1afb8e532ec3524dfa168185e2bcd0136797dad",
-      "source_tree": "sha256:10c07ef03803db100c7cca2f61decf128d23f442e5b765afe2126e3d39727e42"
+      "files": 416,
+      "generated_at_commit": "7d10e1adb9d04310273d6022f2744d471995db55",
+      "source_tree": "sha256:bdeace5168d590bab6484e6221c2e36cba90badd8a0abf00b02a72dd5884fe44"
     },
     "owner_lane": "",
     "seed": {
