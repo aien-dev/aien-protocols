@@ -1,13 +1,12 @@
 //! Calibration primitives for the probe engine.
 //!
-//! These functions mirror the semantics of the Mojo SIMD helpers on the Grace Blackwell GB10
-//! path (temperature scaling, entropy, projection) in plain Rust, so the engine stays
+//! Temperature scaling, entropy and projection in plain Rust, so the engine stays
 //! deterministic and testable without a device.
 
 /// Scales a logit by a temperature.
 ///
-/// A non positive or non finite temperature leaves the logit unchanged, matching the Mojo
-/// `temperature_scale` contract. A non finite logit collapses to zero.
+/// A non positive or non finite temperature leaves the logit unchanged. A non finite logit
+/// collapses to zero.
 pub fn temperature_scale(logit: f64, temperature: f64) -> f64 {
     if !logit.is_finite() {
         return 0.0;

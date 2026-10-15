@@ -17,8 +17,8 @@
     "generated": {
       "children": [
         {
-          "digest": "0ee9d8a43def1ad1742426e1bcc49f1581c59d03ec88eb6661842c1425af215b",
-          "last_commit": "1a197e5",
+          "digest": "bd9b800ff34aa0efae9581d58d3453879f24f240e02f0b183776c0744ab305e0",
+          "last_commit": "f250aa2",
           "name": "src",
           "purpose": "Directory crates/aien-probe/src. Purpose not yet described by a human."
         },
@@ -29,15 +29,15 @@
           "purpose": "Directory crates/aien-probe/tests. Purpose not yet described by a human."
         }
       ],
-      "children_root": "sha256:b68b7e4f1f43ba0605d2ded080794796d3a1f5dfac8d220c0bd7b1be3300fee3",
-      "compiled_at": "2026-10-04T18:15:53Z",
+      "children_root": "sha256:03237266f70acb3611dfeea061372a4bc794315cf7e36bfd655f6ad3e17e279f",
+      "compiled_at": "2026-10-15T11:35:44Z",
       "compiler": "crumb-compile/1",
-      "digest": "sha256:799e00109c8e7b1ade36d46cf23b0fc484ab1d0926baaed4163d4d3ad405aab3",
+      "digest": "sha256:8882b1057235e20f8b0af49350d3e4a1cdc1a4c6259170fcbc66cc905cc1a7a8",
       "evidence_files": 0,
       "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "files": 7,
-      "generated_at_commit": "89d915396ac5fc4829804d6efc7bcfdffd8e47c3",
-      "source_tree": "sha256:68d62e8d3b6c6b169b81d1d6779fa4ec2e969c9a5b899a86922320ea30af621e"
+      "generated_at_commit": "f250aa2e0f8c3da108da0c2b2d9f80ddf67ae7a1",
+      "source_tree": "sha256:4904941d1831b300e0ab2d713bfa1f9b11a4b64d768c250e42b20353ae63f74f"
     },
     "owner_lane": "",
     "seed": {

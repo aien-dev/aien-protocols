@@ -58,7 +58,7 @@
         },
         {
           "digest": "76f2ede77565319484d061adb92f7140108845682c659a46ea732661da53be97",
-          "last_commit": "a00c1ed",
+          "last_commit": "055c4f1",
           "name": "aien-evaluation-protocol",
           "purpose": "Directory crates/aien-evaluation-protocol. Purpose not yet described by a human."
         },
@@ -81,8 +81,8 @@
           "purpose": "Directory crates/aien-inference-protocol. Purpose not yet described by a human."
         },
         {
-          "digest": "799e00109c8e7b1ade36d46cf23b0fc484ab1d0926baaed4163d4d3ad405aab3",
-          "last_commit": "3a4cdbe",
+          "digest": "8882b1057235e20f8b0af49350d3e4a1cdc1a4c6259170fcbc66cc905cc1a7a8",
+          "last_commit": "f250aa2",
           "name": "aien-probe",
           "purpose": "Directory crates/aien-probe. Purpose not yet described by a human."
         },
@@ -99,15 +99,15 @@
           "purpose": "Directory crates/aien-provenance. Purpose not yet described by a human."
         }
       ],
-      "children_root": "sha256:786b71a3c9e952f1e5294cee9175cf53d7060d51c51796d267b704e2b4f2f852",
-      "compiled_at": "2026-10-11T15:11:53Z",
+      "children_root": "sha256:b552586103a38f8880dcc92d669e9391a5e924eec6578a237b5d842bfe046f05",
+      "compiled_at": "2026-10-15T11:35:44Z",
       "compiler": "crumb-compile/1",
-      "digest": "sha256:4652edc76249bd51d087edfecfdcb54f71b8d45364e7daddebfeb7dd75057965",
+      "digest": "sha256:568edf1ba4cc3e991aefc7d761a9e782c79fa20d9a5fb49d9f1da59661e1a668",
       "evidence_files": 0,
       "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
       "files": 29,
-      "generated_at_commit": "a00c1ed5df836eaea5dd782fb725444195654fb6",
-      "source_tree": "sha256:718e44cac289288632d33ab3ffd99a8651845bb733968590c0089318409543ad"
+      "generated_at_commit": "f250aa2e0f8c3da108da0c2b2d9f80ddf67ae7a1",
+      "source_tree": "sha256:325f848278a692d37df4599578dbe32f7d3a87d50398c9aac9ac83d84a0344ca"
     },
     "owner_lane": "",
     "seed": {
