@@ -1,0 +1,6 @@
+{
+  "schema_version": "1.0.0",
+  "name": "crates/aien-pi-spark-task",
+  "layer": "crates/aien-pi-spark-task",
+  "purpose": "PST1 Pi-Spark task message: Rust header reader and writer that must match the C checker byte for byte"
+}

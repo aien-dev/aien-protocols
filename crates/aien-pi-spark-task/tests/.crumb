@@ -1,0 +1,6 @@
+{
+  "schema_version": "1.0.0",
+  "name": "crates/aien-pi-spark-task/tests",
+  "layer": "crates/aien-pi-spark-task/tests",
+  "purpose": "Parity test: walks specs/pi-spark-task/vectors/expected.txt against the C checker's verdicts"
+}

@@ -1,0 +1,9 @@
+[package]
+name = "aien-pi-spark-task"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0-or-later"
+description = "PST1 Pi-Spark task message: fixed-size header reader and writer (specs/pi-spark-task)"
+
+[dependencies]
+sha2 = { workspace = true }

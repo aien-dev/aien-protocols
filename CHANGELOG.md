@@ -9,6 +9,10 @@ VERSIONING.md.
 
 ### Specifications
 
+- `crates/aien-pi-spark-task` (C4, aien-protocols-mv#31): Rust reader and
+  writer for the PST1 fixed header, no `unsafe`, no JSON, fixed bounds. Its
+  test walks `specs/pi-spark-task/vectors/expected.txt` and requires the same
+  verdict line as the C checker and byte-identical re-encoding.
 - `specs/pi-spark-task`: PST1 Draft v0.1 (C3, aien-protocols-mv#30): a 4-byte
   `PST1` magic now opens the header (`reserved1` shrank to 1 byte and
   `reserved2` was removed, so the header stays 224 bytes; fields after `type`

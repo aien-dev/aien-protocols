@@ -1,0 +1,6 @@
+{
+  "schema_version": "1.0.0",
+  "name": "crates/aien-pi-spark-task/src",
+  "layer": "crates/aien-pi-spark-task/src",
+  "purpose": "PST1 header decode, encode and verdict line"
+}

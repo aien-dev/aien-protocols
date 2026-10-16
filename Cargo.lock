@@ -88,6 +88,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "aien-pi-spark-task"
+version = "0.1.0"
+dependencies = [
+ "sha2 0.10.9",
+]
+
+[[package]]
 name = "aien-probe"
 version = "0.1.0"
 dependencies = [
