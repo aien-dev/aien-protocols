@@ -1,0 +1,5 @@
+{
+  "schema_version": "1.0.0",
+  "name": "pi-spark-task",
+  "purpose": "PST1 Pi-Spark task message format (draft)"
+}
