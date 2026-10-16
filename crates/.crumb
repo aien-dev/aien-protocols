@@ -81,8 +81,14 @@
           "purpose": "Directory crates/aien-inference-protocol. Purpose not yet described by a human."
         },
         {
+          "digest": "0df1292fb1ef449ec3362cbb5a0407da3b0b77322a22f615da94679ae7537073",
+          "last_commit": "a30cb42",
+          "name": "aien-pi-spark-task",
+          "purpose": "PST1 Pi-Spark task message: Rust header reader and writer that must match the C checker byte for"
+        },
+        {
           "digest": "8882b1057235e20f8b0af49350d3e4a1cdc1a4c6259170fcbc66cc905cc1a7a8",
-          "last_commit": "f250aa2",
+          "last_commit": "8a9c8e2",
           "name": "aien-probe",
           "purpose": "Directory crates/aien-probe. Purpose not yet described by a human."
         },
@@ -99,15 +105,15 @@
           "purpose": "Directory crates/aien-provenance. Purpose not yet described by a human."
         }
       ],
-      "children_root": "sha256:b552586103a38f8880dcc92d669e9391a5e924eec6578a237b5d842bfe046f05",
-      "compiled_at": "2026-10-15T11:35:44Z",
+      "children_root": "sha256:6699c654ab08e8211dd36c643fd8e93a127064e3170e089d1fa5edf6dc4a5b3b",
+      "compiled_at": "2026-10-16T19:43:42Z",
       "compiler": "crumb-compile/1",
-      "digest": "sha256:568edf1ba4cc3e991aefc7d761a9e782c79fa20d9a5fb49d9f1da59661e1a668",
+      "digest": "sha256:70cc942a40485af2b5600def403490456457d47b942439f4a8a895440321c5a4",
       "evidence_files": 0,
       "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "files": 29,
-      "generated_at_commit": "f250aa2e0f8c3da108da0c2b2d9f80ddf67ae7a1",
-      "source_tree": "sha256:325f848278a692d37df4599578dbe32f7d3a87d50398c9aac9ac83d84a0344ca"
+      "files": 32,
+      "generated_at_commit": "a30cb427ca47688da68142654274f0e77806b6a1",
+      "source_tree": "sha256:8511d71d37a5e5d698cb1438ff4bddbd8a1a2aeb53293ce14522bc4042549add"
     },
     "owner_lane": "",
     "seed": {

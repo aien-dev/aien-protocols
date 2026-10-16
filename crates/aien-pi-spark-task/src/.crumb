@@ -1,0 +1,20 @@
+{
+  "extensions": {
+    "generated": {
+      "children": [],
+      "children_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compiled_at": "2026-10-16T19:43:42Z",
+      "compiler": "crumb-compile/1",
+      "digest": "sha256:f83bdac08bbdbc95005bc353d20b4767b320910dd05417eebf6110770d16bae0",
+      "evidence_files": 0,
+      "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "files": 1,
+      "generated_at_commit": "a30cb427ca47688da68142654274f0e77806b6a1",
+      "source_tree": "sha256:3dd498e3f7edf7c039dfb904c9c35acb471ce17aa7928d61e3817bd94703570c"
+    }
+  },
+  "layer": "crates/aien-pi-spark-task/src",
+  "name": "crates/aien-pi-spark-task/src",
+  "purpose": "PST1 header decode, encode and verdict line",
+  "schema_version": "1.0.0"
+}

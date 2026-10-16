@@ -10,6 +10,7 @@ carries a newer tag with migration notes, all consumers target `v0.1.0`.
 | `spark-inquisitor` | protocol-types, evaluation-protocol, probe | v0.1.0 |
 | `spark-rsi` | protocol-types, evaluation-protocol, probe | v0.1.0 |
 | `aien-sovereign-core` (`spark-harvester`, `spark-mail-rs`) | protocol-types, provenance, probe | v0.1.0 |
+| `aien-sovereign-core` (Spark side of the Pi link, lane D, aien-sovereign-core-mv#585; planned, not yet a dependency) | pi-spark-task (`crates/aien-pi-spark-task`, PST1 Draft v0.1) | v0.1.0 |
 
 Consumption is by path dependency today. A consumer moves to a newer tag by
 recording the new version in this table in the same change that adopts it.
