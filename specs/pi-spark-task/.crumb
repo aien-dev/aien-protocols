@@ -3,14 +3,14 @@
     "generated": {
       "children": [],
       "children_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "compiled_at": "2026-10-16T19:41:39Z",
+      "compiled_at": "2026-10-16T22:40:52Z",
       "compiler": "crumb-compile/1",
-      "digest": "sha256:adbc6c78297deadda87bb673f062bb59dc61c1f70612362cee5ac1d54d145963",
+      "digest": "sha256:f826da534c057bc47dbf7aa1ed72ed20c7539d096d56de4f913effb804a3c2a7",
       "evidence_files": 0,
       "evidence_root": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "files": 29,
-      "generated_at_commit": "59f1323f237ad521c78c442a78b6283438064f74",
-      "source_tree": "sha256:801a1e11ccf0f57ce65287b1fc0f373669312d17fbdc40e11e80f0f57fe7f61c"
+      "files": 49,
+      "generated_at_commit": "8b3d68177c693244ffe00d933369860b3a067df4",
+      "source_tree": "sha256:ed2227cf43fb42c97b62512572b1d1897722159836e704266b994fab72156159"
     }
   },
   "name": "pi-spark-task",
