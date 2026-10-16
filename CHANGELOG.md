@@ -9,6 +9,15 @@ VERSIONING.md.
 
 ### Specifications
 
+- `specs/pi-spark-task`: PST1 Draft v0.1 (C3, aien-protocols-mv#30): a 4-byte
+  `PST1` magic now opens the header (`reserved1` shrank to 1 byte and
+  `reserved2` was removed, so the header stays 224 bytes; fields after `type`
+  moved by 4), a fixed check order (section 4.1), and two codes
+  (`PST_BAD_MAGIC`, `PST_NO_OBJECTIVE`). Version 0 is refused as
+  `PST_DOWNGRADE`. Adds the C reference checker and encoder
+  `tools/pst_verify.c` (C99, libc only, no heap), 23 header vectors with
+  `vectors/expected.txt`, `tools/check-vectors.sh` and
+  `tools/mutate-verifier.sh` (15 checks, 15 mutants killed).
 - `specs/pi-spark-task`: PST1 Draft v0, the Pi-Spark task message for
   ALLEN Pi/Spark lane C1 (aien-protocols-mv#28): inventory of reused formats,
   layering over M6-A and M6-B, 224-byte big-endian header, 14 message types,

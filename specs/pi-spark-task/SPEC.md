@@ -1,11 +1,11 @@
 # Pi-Spark Task Message: PST1
 
-**Status**: Draft v0 (ALLEN Pi/Spark lane C1, 2026-10-16). Not yet produced or read by any runtime.
+**Status**: Draft v0.1 (ALLEN Pi/Spark lane C1, 2026-10-16; C3 added the magic, the check order and two codes). Not yet produced or read by any runtime. Reference checker and vectors: `tools/pst_verify.c`, `vectors/`.
 **Contract version**: 0.1.0 (major zero: may change by minor bump, see VERSIONING.md)
 **Wire version**: 1 (the `version` byte below)
 **License**: Community Specification License 1.0
 **Tracking**: aien-dev/aien-protocols-mv#28 (C1), parent #27, lane C of aien-dev/aien-architecture-mv#231
-**Not in this document**: vectors and the C checker (C3), the Spark gate (C2), the Rust reader (C4), the order rules between messages (C5), the INTERPLANE mapping (C6), network framing and retry (aienos-mv#398).
+**Not in this document**: the Spark gate (C2), the Rust reader (C4), the order rules between messages (C5), the INTERPLANE mapping (C6), network framing and retry (aienos-mv#398).
 
 ## 1. Purpose
 
@@ -47,26 +47,47 @@ One PST1 message is a 224-byte fixed header followed by `payload_len` bytes of p
 
 | Offset | Size | Field | Allowed values |
 |---|---|---|---|
-| 0 | 1 | `version` | 1 |
-| 1 | 1 | `type` | 1 to 14 (section 5) |
-| 2 | 2 | `reserved0` | 0 |
-| 4 | 32 | `cause_id` | Not all zero |
-| 36 | 32 | `origin_run_id` | Any value (opaque, copied) |
-| 68 | 32 | `objective_id` | Not all zero for `request`; copied on every later message |
-| 100 | 32 | `subject_id` | The ALLEN subject reference (ADR 0018); no key material |
-| 132 | 16 | `parent_task_id` | All zero means "no parent" |
-| 148 | 16 | `task_id` | Not all zero |
-| 164 | 16 | `idempotence_key` | Not all zero; see section 8 |
-| 180 | 4 | `ordinal` | u32; see section 5 |
-| 184 | 1 | `effect_class` | 0 NONE, 1 COMPUTE, 2 EFFECT |
-| 185 | 3 | `reserved1` | 0 |
-| 188 | 2 | `payload_len` | 0 to 800 |
-| 190 | 2 | `reserved2` | 0 |
+| 0 | 4 | `magic` | The ASCII bytes `PST1` (0x50 0x53 0x54 0x31) |
+| 4 | 1 | `version` | 1 |
+| 5 | 1 | `type` | 1 to 14 (section 5) |
+| 6 | 2 | `reserved0` | 0 |
+| 8 | 32 | `cause_id` | Not all zero |
+| 40 | 32 | `origin_run_id` | Any value (opaque, copied) |
+| 72 | 32 | `objective_id` | Not all zero for `request`; copied on every later message |
+| 104 | 32 | `subject_id` | The ALLEN subject reference (ADR 0018); no key material |
+| 136 | 16 | `parent_task_id` | All zero means "no parent" |
+| 152 | 16 | `task_id` | Not all zero |
+| 168 | 16 | `idempotence_key` | Not all zero; see section 8 |
+| 184 | 4 | `ordinal` | u32; see section 5 |
+| 188 | 1 | `effect_class` | 0 NONE, 1 COMPUTE, 2 EFFECT |
+| 189 | 1 | `reserved1` | 0 |
+| 190 | 2 | `payload_len` | 0 to 800 |
 | 192 | 32 | `payload_digest` | SHA-256 of the payload bytes (of the empty string when `payload_len` is 0) |
 
 Total header: 224 bytes.
 
+Change from Draft v0 (C3, aien-protocols-mv#30): Draft v0 had no magic, so a receiver could not tell a PST1 message from any other 1024-byte blob, and the C3 vectors could not test a "bad magic" refusal. The 4-byte magic now opens the header. To keep the header at 224 bytes (and the 800-byte payload cap), `reserved1` shrank from 3 bytes to 1 and `reserved2` was removed. Every field after `type` moved by 4 bytes, except `payload_digest`, which stays at 192.
+
 `effect_class` is a claim about the work, not a permission. EFFECT work still needs a real grant from the Spark approval desk (lane G, G6).
+
+### 4.1 Check order
+
+A receiver checks one message in this order and reports the first rule that fails. The C reference checker (`tools/pst_verify.c`) and every other reader follow the same order, so the same bytes always give the same code.
+
+1. Fewer than 224 bytes, or more than 1024 bytes: `PST_BAD_LENGTH`.
+2. `magic` is not `PST1`: `PST_BAD_MAGIC`.
+3. `version` is 0 (below the lowest version this receiver accepts): `PST_DOWNGRADE`. `version` above 1: `PST_BAD_VERSION`.
+4. `type` is 0 or above 14: `PST_BAD_TYPE`.
+5. `reserved0` or `reserved1` is non-zero: `PST_RESERVED_NONZERO`.
+6. The bytes after the header are fewer than `payload_len`: `PST_BAD_LENGTH`. (A `payload_len` above 800 always lands here or in step 1, since 224 plus 801 is more than 1024.)
+7. The bytes after the header are more than `payload_len`: `PST_TRAILING_BYTES`.
+8. `effect_class` above 2: `PST_BAD_EFFECT_CLASS`.
+9. `cause_id` all zero: `PST_NO_CAUSE`.
+10. `task_id` all zero, then `idempotence_key` all zero: `PST_NO_TASK`.
+11. `type` is `request` and `objective_id` is all zero: `PST_NO_OBJECTIVE`.
+12. `payload_digest` differs from the SHA-256 of the payload: `PST_DIGEST_MISMATCH`.
+
+The checks that need more than one message (`PST_WRONG_SIDE`, `PST_SUBJECT_MISMATCH`, a version lower than the one already used in the session) come after these and belong to the session rules (C5).
 
 ## 5. Message types
 
@@ -101,19 +122,21 @@ Status is derived from authoritative execution state on the Spark. A `completed`
 
 ## 7. Refusal codes
 
-A receiver refuses the message and takes no action. It reports one of these. A refusal never changes task state.
+A receiver refuses the message and takes no action. It reports one of these, choosing by the check order in section 4.1. A refusal never changes task state.
 
 | Code | Meaning |
 |---|---|
-| `PST_BAD_VERSION` | `version` is not 1 |
-| `PST_DOWNGRADE` | `version` is lower than the version already used in this session |
+| `PST_BAD_MAGIC` | The first 4 bytes are not `PST1` |
+| `PST_BAD_VERSION` | `version` is above 1 (unknown version) |
+| `PST_DOWNGRADE` | `version` is 0 (below the lowest accepted version), or lower than the version already used in this session |
 | `PST_BAD_TYPE` | `type` is 0 or above 14 |
 | `PST_WRONG_SIDE` | A Pi-only type from the Spark, or the reverse |
-| `PST_BAD_LENGTH` | Fewer than 224 bytes, `payload_len` above 800, or the total differs from 224 plus `payload_len` |
-| `PST_TRAILING_BYTES` | Bytes after the declared payload |
+| `PST_BAD_LENGTH` | Fewer than 224 bytes, more than 1024 bytes, `payload_len` above 800, or fewer payload bytes than `payload_len` |
+| `PST_TRAILING_BYTES` | More payload bytes than `payload_len` (and the total is at most 1024) |
 | `PST_RESERVED_NONZERO` | Any reserved byte is non-zero |
 | `PST_NO_CAUSE` | `cause_id` is all zero |
 | `PST_NO_TASK` | `task_id` or `idempotence_key` is all zero |
+| `PST_NO_OBJECTIVE` | A `request` whose `objective_id` is all zero (added in C3: Draft v0 stated the rule but named no code) |
 | `PST_DIGEST_MISMATCH` | `payload_digest` does not match the payload |
 | `PST_BAD_EFFECT_CLASS` | `effect_class` above 2 |
 | `PST_SUBJECT_MISMATCH` | `subject_id` differs from the subject bound to this session |
