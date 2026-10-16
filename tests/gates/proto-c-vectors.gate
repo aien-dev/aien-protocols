@@ -1,0 +1,21 @@
+# tests/gates/proto-c-vectors.gate
+# Runs every spec C checker matching specs/*/tools/check-*.sh with bash (aien-protocols-mv#29).
+# No hosted step mirrors this one: before this gate the checkers were never judged.
+gate: PROTO-C-VECTORS
+manifest_version: 2
+owner: aien-protocols
+requires:
+  - host
+inputs:
+  - specs/
+  - tests/gates/
+run:
+  exec: tests/gates/run.sh
+  args: ["c-vectors"]
+expects:
+  exit: 0
+  observe: ["c_checkers_failed == 0"]
+  verdict: PASS
+timeout: 30m
+exactness: EXACT
+cache_scope: machine
