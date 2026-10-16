@@ -9,6 +9,11 @@ VERSIONING.md.
 
 ### Specifications
 
+- `specs/pi-spark-task`: PST1 Draft v0, the Pi-Spark task message for
+  ALLEN Pi/Spark lane C1 (aien-protocols-mv#28): inventory of reused formats,
+  layering over M6-A and M6-B, 224-byte big-endian header, 14 message types,
+  size and refusal rules, the limits of exactly once, and a no-permission
+  clause. No code and no vectors yet (C3).
 - `specs/osh-platform`: OSH Platform ABI v1 DRAFT (not frozen) for the
   Omega-native shell of aien-architecture#158: step and status protocol,
   request record, platform operations, authority and interrupted-effect
