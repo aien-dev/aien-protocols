@@ -71,21 +71,21 @@
           "purpose": "OSH platform ABI draft (osh-platform)"
         },
         {
-          "digest": "adbc6c78297deadda87bb673f062bb59dc61c1f70612362cee5ac1d54d145963",
-          "last_commit": "59f1323",
+          "digest": "f826da534c057bc47dbf7aa1ed72ed20c7539d096d56de4f913effb804a3c2a7",
+          "last_commit": "8b3d681",
           "name": "pi-spark-task",
           "purpose": "PST1 Pi-Spark task message format (draft)"
         }
       ],
-      "children_root": "sha256:8f3a7d6197c41d39bb299d0c9ea1f5242230f04f45e5d7606c7aeddfb27f73d8",
-      "compiled_at": "2026-10-16T19:41:39Z",
+      "children_root": "sha256:cdb6857f22d3c887bd9b61d9b5d7494f6f6678c329c411f25c739dd0a1c27a26",
+      "compiled_at": "2026-10-16T22:40:52Z",
       "compiler": "crumb-compile/1",
-      "digest": "sha256:886d262febe7e1000682c452329ade70f9e10df41ff07dccbf49baf7b2132538",
+      "digest": "sha256:571bb0d91bd99c6fd7028437f322fcef624d6678d70c7c88bd8ce843cceb2389",
       "evidence_files": 1,
       "evidence_root": "sha256:87c36bf8ed7be61c064552ebf141834707770b75d070ea49328a3e06d510afba",
-      "files": 445,
-      "generated_at_commit": "59f1323f237ad521c78c442a78b6283438064f74",
-      "source_tree": "sha256:e02d9143e28e4828d361467bcef00a867dcc008f84f4d5239e2ab71fee15e0c7"
+      "files": 465,
+      "generated_at_commit": "8b3d68177c693244ffe00d933369860b3a067df4",
+      "source_tree": "sha256:9bf0947e9de2ca08728d47f543285396019b8f7b08eddbac7925635c57761c7a"
     },
     "owner_lane": "",
     "seed": {

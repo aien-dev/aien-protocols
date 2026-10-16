@@ -12,7 +12,7 @@ vec="$here/../vectors"
 CC=${1:-cc}
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
-names=$(sed -n '/CHK_MAX_TOTAL = 1/,/CHK_LAST/p' "$here/pst_verify.c" | tr -d ' \n' | sed 's/CHK_MAX_TOTAL=1/CHK_MAX_TOTAL/; s/,CHK_LAST.*//' | tr ',' ' ')
+names=$(sed -n '/CHK_MAX_TOTAL = 1/,/CHK_LAST/p' "$here/pst_verify.c" | sed 's|/\*.*\*/||' | tr -d ' \n' | sed 's/CHK_MAX_TOTAL=1/CHK_MAX_TOTAL/; s/,CHK_LAST.*//' | tr ',' ' ')
 test -n "$names" || { echo "cannot read the check list" >&2; exit 2; }
 k=0 killed=0 survived=0
 for name in $names; do
