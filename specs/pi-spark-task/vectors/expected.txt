@@ -1,4 +1,4 @@
-# PST1 single-message vectors. Spec: ../SPEC.md (Draft v0.1, wire version 1).
+# PST1 single-message vectors. Spec: ../SPEC.md (wire version 1), sections 4 and 7.
 # Line: <file> <verdict line>, verdict line as printed by tools/pst_verify.c:
 #   ok type=T version=V cause=H64 origin=H64 objective=H64 subject=H64 parent=H32
 #      task=H32 idem=H32 ordinal=N effect=E len=L digest=H64   (one line)

@@ -1,11 +1,11 @@
 # Pi-Spark Task Message: PST1
 
-**Status**: Draft v0.1 (ALLEN Pi/Spark lane C1, 2026-10-16; C3 added the magic, the check order and two codes). Not yet produced or read by any runtime. Reference checker and vectors: `tools/pst_verify.c`, `vectors/`.
+**Status**: Draft v0.2 (ALLEN Pi/Spark lane C1, 2026-10-16; C3 added the magic, the check order and two codes; C5 added the session rules, section 10). Not yet produced or read by any runtime. Reference checker and vectors: `tools/pst_verify.c`, `vectors/`.
 **Contract version**: 0.1.0 (major zero: may change by minor bump, see VERSIONING.md)
 **Wire version**: 1 (the `version` byte below)
 **License**: Community Specification License 1.0
 **Tracking**: aien-dev/aien-protocols-mv#28 (C1), parent #27, lane C of aien-dev/aien-architecture-mv#231
-**Not in this document**: the Spark gate (C2), the Rust reader (C4), the order rules between messages (C5), the INTERPLANE mapping (C6), network framing and retry (aienos-mv#398).
+**Not in this document**: the Spark gate (C2), the Rust reader (C4), the INTERPLANE mapping (C6), network framing and retry (aienos-mv#398).
 
 ## 1. Purpose
 
@@ -110,7 +110,7 @@ The checks that need more than one message (`PST_WRONG_SIDE`, `PST_SUBJECT_MISMA
 | 13 | `cancel_request` | Pi | Empty |
 | 14 | `resume_request` | Pi | Empty |
 
-`ordinal` numbers the messages of one task from the sender's side, starting at 0 and rising by one. `text_chunk` messages of one task carry consecutive ordinals so a lost or repeated chunk is visible. The order rules between types are not defined here; they belong to C5.
+`ordinal` numbers the messages of one task from the sender's side, starting at 0 and rising by one. `text_chunk` messages of one task carry consecutive ordinals so a lost or repeated chunk is visible. The order rules between types are in section 10.
 
 Status is derived from authoritative execution state on the Spark. A `completed`, `failed` or `cancelled` message is only sent after the authoritative record says so. Events are hints until the receiver has checked what it can.
 
@@ -140,6 +140,15 @@ A receiver refuses the message and takes no action. It reports one of these, cho
 | `PST_DIGEST_MISMATCH` | `payload_digest` does not match the payload |
 | `PST_BAD_EFFECT_CLASS` | `effect_class` above 2 |
 | `PST_SUBJECT_MISMATCH` | `subject_id` differs from the subject bound to this session |
+| `PST_BAD_ORDER` | A message the session rules (section 10.2) do not allow in the task's current state |
+| `PST_SECOND_FINAL` | A second `completed`, `failed` or `cancelled` for one task |
+| `PST_ORDINAL_GAP` | An `ordinal` higher than the next expected one for that task and side |
+| `PST_ORDINAL_REPEAT` | An `ordinal` lower than the next expected one for that task and side |
+| `PST_IDEMPOTENCE_CONFLICT` | An `idempotence_key` reused for another task, or a known task repeated with another key or payload digest |
+| `PST_UNKNOWN_TASK` | A message other than `request` for a task the session has no `request` for |
+| `PST_CONTEXT_MISMATCH` | A copied field differs from the task's `request` (section 10.3, step 5) |
+| `PST_SESSION_FULL` | A new task beyond the receiver's task limit |
+| `PST_BAD_RECORDING` | A recorded session file (section 10.4) that does not parse; test vectors only |
 
 A receiver that gets work with no cause id refuses it (`PST_NO_CAUSE`); it does not mint one. The cause id is minted once, where the outside request first enters AIEN (on the Pi, at the user's turn), per the causal id join spec.
 
@@ -155,7 +164,49 @@ A receiver that gets work with no cause id refuses it (`PST_NO_CAUSE`); it does 
 
 No message type, field or value in PST1 grants a capability, a permission, an approval or an identity. `waiting_for_approval` asks; it does not decide. Approvals come from the Spark approval desk and are not carried as PST1 fields. The ALLEN subject stays the authority on the Pi.
 
-## 10. Open questions
+## 10. Session rules (C5)
+
+A message can be well formed and still be a lie in its place: "completed" for a task that was never accepted, a second final answer, a missing text chunk, a completion claimed by the Pi. This section says which message may follow which inside one M6-B session. A receiver checks every message against it, after the single-message checks of section 4.1, and refuses at the first broken step. A refusal changes no task state.
+
+Scope of this first cut (aien-protocols-mv#32): the normal life of a task (request, accepted, optionally queued, running, text chunks, completed) and the failed and cancelled endings, the Pi's `cancel_request` and `resume_request`, and repeated requests. `waiting_for_approval`, `uncertain_after_disconnect`, `resume_snapshot` and `receipt_reference` are refused with `PST_BAD_ORDER` in a session until their rules are written (open question 5).
+
+### 10.1 Who may send what
+
+The side comes from the transport (section 3, rule 1), never from a PST1 field. The Pi sends only `request` (1), `cancel_request` (13) and `resume_request` (14). The Spark sends every other type. Anything else is `PST_WRONG_SIDE`; this is how a completion or an approval claimed by the Pi is refused.
+
+### 10.2 Allowed sequence for one task
+
+| Type | Sent by | Allowed when the task is | Task becomes |
+|---|---|---|---|
+| `request` (new `task_id`) | Pi | (no task yet) | REQUESTED |
+| `request` (known `task_id`, same `idempotence_key` and `payload_digest`) | Pi | any state | unchanged: a recognised repeat (section 8, item 2) |
+| `accepted` | Spark | REQUESTED | ACCEPTED |
+| `queued` | Spark | ACCEPTED | QUEUED |
+| `running` | Spark | ACCEPTED or QUEUED | RUNNING |
+| `text_chunk` | Spark | RUNNING | RUNNING |
+| `completed` | Spark | RUNNING | FINAL |
+| `failed`, `cancelled` | Spark | REQUESTED, ACCEPTED, QUEUED or RUNNING | FINAL |
+| `cancel_request`, `resume_request` | Pi | any state | unchanged |
+
+So a normal task reads: `request`, `accepted`, (`queued`), `running`, `text_chunk` any number of times, `completed`. Tasks of one session may interleave; each task follows its own row.
+
+### 10.3 Check order for one message in a session
+
+1. The single-message checks (section 4.1).
+2. Side (10.1): `PST_WRONG_SIDE`.
+3. Subject: the first message of the session binds its `subject_id`; any later different `subject_id` is `PST_SUBJECT_MISMATCH`.
+4. Task: a `request` with a new `task_id` whose `idempotence_key` already belongs to another task is `PST_IDEMPOTENCE_CONFLICT`. A `request` for a known `task_id` with a different `idempotence_key` or `payload_digest` is `PST_IDEMPOTENCE_CONFLICT`. Any other type naming a `task_id` the session has no `request` for is `PST_UNKNOWN_TASK` (this covers a `resume_request` for an unknown task). A new task beyond the receiver's limit is `PST_SESSION_FULL`; the reference checker allows 16 tasks per session.
+5. Context: `cause_id`, `origin_run_id`, `objective_id`, `parent_task_id`, `idempotence_key` and `effect_class` must equal the task's `request`: `PST_CONTEXT_MISMATCH`. A recognised repeat of the `request` stops here and changes nothing.
+6. Ordinal: per task and per side, the first message carries 0 and each next one carries one more. Higher than expected is `PST_ORDINAL_GAP` (a message, for example a text chunk, was skipped); lower is `PST_ORDINAL_REPEAT`.
+7. Order (10.2): a final type (`completed`, `failed`, `cancelled`) after FINAL is `PST_SECOND_FINAL`; any other step not allowed by the table is `PST_BAD_ORDER`.
+
+Version inside a session: the first message binds the version; a later lower version is `PST_DOWNGRADE` and a later higher one `PST_BAD_VERSION`. While version 1 is the only accepted version this cannot happen past step 1, so the reference checker has no separate check for it yet.
+
+### 10.4 Recording format (test vectors only)
+
+A recorded session (`vectors/sessions/*.pss`) is the 4 bytes `PSS1`, then for each delivered message in delivery order: 1 byte side (1 Pi, 2 Spark), 2 bytes big-endian length, the message bytes. This is a test container, not a wire format. A recording that does not parse is refused with `PST_BAD_RECORDING`. The verdict line is `ok steps=N tasks=T` or `refuse CODE step=N`, where step N is the 1-based message position.
+
+## 11. Open questions
 
 These are stated plainly so the C3 vectors and the neighbouring lanes can settle them. None is decided here.
 
@@ -163,3 +214,4 @@ These are stated plainly so the C3 vectors and the neighbouring lanes can settle
 2. Whether `resume_snapshot` needs its own payload layout, or a task-kind byte inside the payload. To be fixed by G3 and C5.
 3. The aienos lane (aienos-mv#398) must confirm it can carry 1024-byte messages end to end and agree the framing.
 4. Whether big-endian stays (section 6, item 3).
+5. Session rules for `waiting_for_approval`, `uncertain_after_disconnect`, `resume_snapshot` and `receipt_reference` (section 10). Until then a session refuses them with `PST_BAD_ORDER`.
